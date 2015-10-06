@@ -11,7 +11,7 @@
 #include "smdatapack.hpp"
 #include <cstdio>
 #include <cstring>
-#define gzgetDWORD(f) ((gzgetc(f)<<24)|(gzgetc(f)<<16)|(gzgetc(f)<<8)|(gzgetc(f)))&0xFFFFFFFF
+#define gzgetDWORD(f) (((gzgetc(f))<<24)|((gzgetc(f))<<16)|((gzgetc(f))<<8)|(gzgetc(f)))&0xFFFFFFFF
 #define gch ((*(cp++))&0xFF)
 #define mmgetDWORD ((gch<<24)|(gch<<16)|(gch<<8)|(gch))&0xFFFFFFFF
 #define gzputDWORD(f,a) gzputc(f,a>>24);gzputc(f,(a>>16)&0xFF);gzputc(f,(a>>8)&0xFF);gzputc(f,a&0xFF);
