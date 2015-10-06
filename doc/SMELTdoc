@@ -1,0 +1,837 @@
+A simple SMELT documentation for SMELT developers (myself) ...
+API Level 3
+
+Types==========================================================================
+DWORD: ranged 0~4294967296 (32 bit unsigned int)
+WORD: ranged 0~65536 (16 bit unsigned int)
+BYTE: ranged 0~256 (8 bit unsigned int)
+smHook: bool() call backs
+SMCHN: Channel handle. Generated when a effect was played.
+SMSFX: Sound FX handle.
+SMTEX: Texture handle.
+SMTRG: Render Target handle. Targets provide render to texture support.
+
+Macros=========================================================================
+ARGB(a,r,g,b): Generates a hardware color with the specificed values.
+RGBA(r,g,b,a): Same as ARGB, with different parameter order.
+GET<A|R|G|B>(col): Extract alpha/red/green/blue value from a hardware color.
+SET<A|R|G|B>(col,a|r|g|b): Set alpha/red/green/blue value of a hardware color.
+
+PI: 3.14159265358979323846f
+
+BLEND_ALPHAADD/BLEND_ALPHABLEND: Alpha blending methods.
+BLEND_COLORADD/BLEND_COLORMUL/BLEND_COLORINV: Color blending methods.
+BLEND_ZWRITE/BLEND_NOZWRITE: Depth blending methods.
+The BLEND_* macros of the different types can be or'd together.
+
+FPS_FREE/FPS_VSYNC: Special fps values.
+
+INPUT_*: Input event types.
+
+PRIM_*: Primitive types.
+
+SMELT_APILEVEL: SMELT api version.
+
+SMINP_*: Key modifiers. They can be or'd together.
+SMKST_*: Key states.
+SMK_*: Keys.
+
+Sturctures=====================================================================
+smInpEvent: Input event structure.
+-chcode: Char code.
+-sccode: Key scan code.
+-type: Input event type. The macros INPUT_* are used.
+-flag: Modifiers. The macros SMINP_* are used.
+-wheel: Wheel motion.
+-x,y: Mouse position.
+
+smVertex: Vertex structure.
+-x,y,z: Position. Z can be used for depth testing in 2D mode.
+-col: Vertex color.
+-tx,ty: Texture coordinates.
+
+smTriangle: Triangle primitive structure.
+-v[3]: Vertexes of the triangle.
+-tex: Texture of the triangle.
+-blend: Blend mode of the triangle. The macros BLEND_* are used.
+
+smQuad: Quadrilateral primitive structure.
+-v[4]: Vertexes of the quadrilateral.
+-tex: Texture of the quadrilateral.
+-blend: Blend mode of the quadrilateral. The macros BLEND_* are used.
+WARNING: Quadrilaterals are treated as two triangles internally.
+You may get unwanted results if the quadrilateral is not a parallelogram.
+
+smTexRect: Texture rectangle sturcture.
+-x,y: Top left coordinate of the texture used.
+-w,h: Width & height of the texture used.
+
+Exposed function===============================================================
+SMELT* smGetInterface(int apilevel)
+Returns an interface to the SMELT core functions if the apilevel matches the
+internal one, otherwise it returns NULL.
+
+Packaged SMELT core functions==================================================
+All these functions are packaged in the class "SMELT".
+
+void smRelease() [core]
+Release one reference to the SMELT core. Once all references are released,
+the core will commit suicide and all resources used by it will be freed.
+
+bool smInit() [core]
+Initialize the SMELT interface, including the OpenGL/Direct3D interfaces, the
+OpenAL interfaces and the input interfaces. Functions from these interfaces
+won't function until smInit() is called. The application window will also
+be created.
+If the interfaces are initialized successfully, this function returns true, 
+otherwise it returns false. The errors are written to stderr and the log file
+if set.
+
+void smFinale() [core]
+Deinitialize the SMELT interface. This function closes the application window
+and frees all resources managed by SMELT.
+
+void smMainLoop() [core]
+Starts the main loop, which calls UpdateFunc/FocFunc/UnFocFunc/QuitFunc at
+proper occasion.
+This function requires the UpdateFunc set and the initialization of the SMELT 
+interface.
+
+void smUpdateFunc(smHook func) [core]
+Sets the update function.
+The update function returns bool and takes no parameters.
+If the update function returns true, the main loop will break, otherwise
+the main loop runs perpetually.
+The update function is called every frame.
+
+void smUnFocFunc(smHook func) [core]
+Sets the unfocus function.
+The unfocus function is called when the application window loses focus.
+
+void smFocFunc(smHook func) [core]
+Sets the focus function.
+The focus functions is called when the application window gains focus.
+
+void smWinTitle(const char* title) [core]
+Sets the application window title.
+The default title is "untitled".
+
+bool smIsActive() [core]
+Returns true if the application window has focus.
+
+void smNoSuspend(bool para) [core]
+By default, the update function won't be called when the application
+window doesn't have focus (para=false).
+Call this with para=true to make SMELT behave differently.
+
+void smVidMode(int resX,int resY,bool _windowed) [core]
+Sets the application video mode.
+The default mode is 800 x 600 fullscreen.
+Inappropriate values may cause the failure of smInit().
+In addition, only the _windowed parameter can be changed on-the-fly.
+
+void smLogFile(const char* path) [core]
+Sets the log file path.
+
+void smLog(const char* format,...) [core]
+Write something to the log file.
+The C-style formatting can be used.
+The log will be written to stderr and the log file if set.
+
+void smScreenShot(const char* path) [core]
+Takes a shot of the application window content and saves it to the
+given path.
+
+
+void smSetFPS(int fps) [core/FPS]
+Sets the desired FPS value.
+The macros FPS_* can be used.
+
+float smGetFPS() [core/FPS]
+Gets the current FPS value.
+The current FPS value is updated every second.
+
+float smGetDelta() [core/FPS]
+Gets the delta time between the current frame and the last frame.
+
+float smGetTime() [core/FPS]
+Gets the time in milliseconds since the call to smInit().
+
+SMSFX smSFXLoad(const char *path) [core/SFX]
+Loads a sound file from the given path. Only ogg files are supported.
+
+SMSFX smSFXLoadFromMemory(const char *ptr,DWORD size) [core/SFX]
+Loads a sound file from the given memory block. Only ogg files are supported.
+
+SMCHN smSFXPlay(SMSFX fx,int vol=100,int pan=0,float pitch=1.,bool loop=0)
+[core/SFX]
+Plays the given SFX. All parameters except the fx handle is optional.
+A channel is generated and can be used to control the playing of the SFX.
+The channel is valid until it stops.
+Volume should be 0~100.
+Panning should be -100~100.
+The values would be clamped to the range given above.
+
+float smSFXGetLengthf(SMSFX fx) [core/SFX]
+Gets the sound length in seconds.
+
+DWORD smSFXGetLengthd(SMSFX fx) [core/SFX]
+Gets the sound length in samples.
+
+void smSFXSetLoopPoint(SMSFX fx,DWORD l,DWORD r) [core/SFX]
+Sets the loop point of a SFX. The loop points will be used when the fx is
+played with loop=true.
+The loop points are expressed in samples.
+By default, the whole SFX is looped.
+This function uses AL_SOFT_loop_points and may not work if SMELT isn't built
+against OpenAl Soft.
+
+void smSFXFree(SMSFX fx) [core/SFX]
+Releases the sound file from memory.
+The handle will be invalid thereafter.
+
+void smChannelVol(SMCHN chn,int vol) [core/SFX]
+Sets channel volume (0~100).
+
+void smChannelPan(SMCHN chn,int pan) [core/SFX]
+Sets channel panning (-100~100).
+
+void smChannelPitch(SMCHN chn,float pitch) [core/SFX]
+Sets channel pitch.
+
+void smChannelPause(SMCHN chn) [core/SFX]
+Pauses the channel.
+
+void smChannelResume(SMCHN chn) [core/SFX]
+Resumes the paused channel.
+
+void smChannelStop(SMCHN chn) [core/SFX]
+Stops the channel. The channel handle will be invalid thereafter.
+
+void smChannelPauseAll() [core/SFX]
+Pauses all playing channels.
+
+void smChannelResumeAll() [core/SFX]
+Resumes all channels.
+
+void smChannelStopAll() [core/SFX]
+Stops all channels.
+
+bool smChannelIsPlaying(SMCHN chn) [core/SFX]
+Tests if a channel is playing.
+
+float smChannelGetPosf(SMCHN chn) [core/SFX]
+Gets current position in second.
+
+void smChannelSetPosf(SMCHN chn,float pos) [core/SFX]
+Sets current position in second.
+
+int smChannelGetPosd(SMCHN chn) [core/SFX]
+Gets current position in sample.
+
+void smChannelSetPosd(SMCHN chn,int pos) [core/SFX]
+Sets current position in sample.
+
+void smGetMouse2f(float *x,float *y) [core/input]
+Gets mouse position (within the window).
+
+void smSetMouse2f(float x,float y) [core/input]
+Sets mouse position (within the window).
+
+int smGetWheel() [core/input]
+Gets mouse wheel motion since the last frame.
+
+bool smIsMouseOver() [core/input]
+Tests if the cursor is inside the application window.
+
+int smGetKeyState(int key) [core/input]
+Gets the state of the given key. The SMK_* macros can be used.
+Mouse buttons are treated as keys.
+The return values are one of the SMKST_* macros.
+
+SMKST_NONE: the key is not pressed and is not just released either.
+SMKST_RELEASE: the key is not pressed but is just released.
+SMKST_HIT: the key is pressed but it was not pressed in the last frame.
+SMKST_KEEP: the key is pressed and held since the last frame or earlier.
+
+int smGetKey() [core/input]
+Gets the key pressed last frame.
+If multiple keys are pressed, the last pressed one counts.
+
+bool smGetInpEvent(smInpEvent *e) [core/input]
+Gets a event from the input queue.
+The input parameter will be set to point the event.
+If there are no events in the input queue, this function will return false.
+
+bool smRenderBegin2D(bool ztest=0,SMTRG trg=0) [core/GFX]
+Starts rendering a 2D scene.
+Set ztest to true if you want to use the z coordinate to control overlapping.
+Set trg to the desired rendering target to render everything to the target.
+The function resets the camera. You should setup the camera every frame.
+NOTE: Any rendering function is not functional outside the smRenderBegin*D
+function and its corresponding smRenderEnd function.
+
+bool smRenderBegin3D(float fov,SMTRG trg=0) [core/GFX]
+Starts rendering a 3D scene.
+Ztest is forced on in 3D mode.
+Set trg to the desired rendering target to render everything to the target.
+The projection matrix always has the near clipping value 0.1 and the far
+clipping value 1000.
+The function resets the camera. You should setup the camera every frame.
+NOTE: Any rendering function is not functional outside the smRenderBegin*D
+function and its corresponding smRenderEnd function.
+
+bool smRenderEnd() [core/GFX]
+Ends rendering the scene.
+NOTE: Any rendering function is not functional outside the smRenderBegin*D
+function and its corresponding smRenderEnd function.
+
+void sm3DCamera6f2v(float *pos,float *rot) [core/GFX/Rendering]
+Sets the 3D camera position and panning.
+Each float vector should countain three elements.
+The panning is Euler rotation (all in degrees).
+If any of the vectors is NULL, the function will reset the camera.
+The behaviour of the function is undefined in a 2D rendering session.
+
+void sm2DCamera5f3v(float *pos,float *dpos,float *rot) [core/GFX/Rendering]
+Sets the 2D camera transformation.
+pos should contain two elements describing the camera position.
+dpos should countain two elements describing the rotation centre.
+rot is the pointer to a single float describing the rotation (in degrees).
+If any of the vectors is NULL, the function will reset the camera.
+The behaviour of the function is undefined in a 3D rendering session.
+
+void smMultViewMatrix(float *mat) [core/GFX/Rendering]
+Provides direct manipulation on the view matrix. You can use "look at" matrix
+here, for example.
+The matrix the same as the matrix defined in smMatrix, but stored in float.
+(That's fairly stupid...)
+
+void smClrscr(DWORD color) [core/GFX/Rendering]
+Clears the screen/rendering target with color.
+Alpha channel is not applicable.
+
+void smRenderLinefd(float x1,float y1,float z1,float x2,float y2,float z2,DWORD
+color) [core/GFX/Rendering]
+Renders a line from (x1,y1,z1) to (x2,y2,z2) in the given color.
+Lines have no textures.
+
+void smRenderLinefvd(float *p1,float *p2,DWORD color) [core/GFX/Rendering]
+Renders a line from (p1[0],p1[1],p1[2]) to (p2[0],p2[1],p2[2]) in the given color.
+
+void smRenderTriangle(smTriangle *t) [core/GFX/Rendering]
+Renders a triangle.
+
+void smRenderQuad(smQuad *q) [core/GFX/Rendering]
+Renders a quadrilateral.
+
+smVertex* smGetVertArray() [core/GFX/Rendering]
+Return a pointer to the internal vertex array for advanced batching.
+The vertex array is rendered and cleared in this function. So you will always
+get a full vertex array.
+By default, the size of the vertex array is 4000.
+
+void smDrawVertArray(int prim,SMTEX texture,int blend,int _primcnt)
+[core/GFX/Rendering]
+Draws the vertex array modified by advanced batching.
+
+SMTRG smTargetCreate(int w,int h) [core/GFX]
+Creates a rendering target (sized w*h).
+Modern OpenGL supports non-power-of-two targets, however some of the D3D9
+hardwares doesn't.
+The target will be automatically resized, larger than the requested size, if
+it is not supported.
+
+SMTEX smTargetTexture(SMTRG targ) [core/GFX]
+Gets the texture of the rendering target.
+
+void smTargetFree(SMTRG targ) [core/GFX]
+Frees the rendering target.
+
+SMTEX smTextureCreate(int w,int h) [core/GFX]
+Creates a blank texture (sized w*h).
+OpenGL version supports non-power-of-two textures, however some of the D3D9
+hardwares doesn't.
+The texture will be automatically resized, larger than the requested size, if
+it is not supported.
+
+SMTEX smTextureLoad(const char *path,bool mipmap=false) [core/GFX]
+Loads texture from the given file.
+OpenGL version supports non-power-of-two textures, however some of the D3D9
+hardwares doesn't.
+The texture will be automatically resized, larger than the requested size, if
+it is not supported.
+mipmapping doesn't work in OpenGL versions.
+
+SMTEX smTextureLoadFromMemory(const char *ptr,DWORD size,bool mipmap=false)
+[core/GFX]
+Loads texture from the given memory block.
+OpenGL version supports non-power-of-two textures, however some of the D3D9
+hardwares doesn't.
+The texture will be automatically resized, larger than the requested size, if
+it is not supported.
+mipmapping doesn't work in OpenGL versions.
+
+void smTextureFree(SMTEX tex) [core/GFX]
+Release the texture from memory.
+
+int smTextureGetWidth(SMTEX tex,bool original=false) [core/GFX]
+Gets the width of the texture.
+If original==false and the texture is resized, the function will return the
+resized p-o-t width of the texture.
+Otherwise it returns the actual width of the texture file.
+
+int smTextureGetHeight(SMTEX tex,bool original=false) [core/GFX]
+Gets the height of the texture.
+If original==false and the texture is resized, the function will return the
+resized p-o-t height of the texture.
+Otherwise it returns the actual height of the texture file.
+
+DWORD* smTextureLock(SMTEX tex,int l,int t,int w,int h,bool ro=true) [core/GFX]
+Locks the texture for reading/writing.
+The locked area is defined as (l,t,w,h): left, top, width, height.
+if ro==true, the changes won't be written back to the video memory.
+Textures of rendering targets cannot be locked.
+
+void smTexutreUnlock(SMTEX tex) [core/GFX]
+Unlocks the texture so that it can be used for rendering.
+The changes will be commited to the video memory if ro==false when locking
+the texture.
+
+SMELT extensions===============================================================
+
+smAnimation====================================================================
+The extension provides texture management and animated entity support.
+
+Texture info class: smTexInfo
+smTexRect rect;							Texture rectangle
+char *name,*path;						name and internal path of the texture
+SMTEX tex;								Texture handle
+
+Animation info class: smAnmInfo
+smTexInfo frames[256]					Frames of the animation
+int framedur[256]						Frame durations
+int mode								loop mode: 0=noloop 1=loop 2=bidi loop
+int fc									Frame count
+char* name								Name of the animation
+
+Animation file class: smAnmFile
+For the format of the .anm file, please refer to the file datapackFormat.
+-bool loadAnmFromMemory(char* ptr,DWORD size)
+ Loads a .anm file from the given memory block.
+ .anm file is always packaged in dtp files in practice so only the load from
+ memory version is implemented.
+ All textures are loaded into the video memory during the process, so make sure
+ SMELT is initialized before calling this function.
+-void close()
+ Close the anm file, free all textures and do the cleanup.
+-smTexInfo* getTextureInfo(const char* name)
+ Gets the details of the texture with the given name.
+-smAnmInfo* getAnimationInfo(const char* name)
+ Gets the details of the animation with the given name.
+
+2D animated entity class: smAnimation2D
+smAnimation2D is derived from the smEntity2D class.
+-Constructor from a smAnmInfo class
+-void updateAnim(int f=1)
+ Updates the animation with frame step f.
+-void resetAnim()
+ Resets the animation.
+
+3D animated entity class: smAnimation3D
+smAnimation3D is derived from the smEntity3D class.
+-Constructor from a smAnmInfo class
+-void updateAnim(int f=1)
+ Updates the animation with frame step f.
+-void resetAnim()
+ Resets the animation.
+smBMFont=======================================================================
+The extension provides support of bitmap font rendering.
+Bitmap font used by SMELT is described in anm format, with a different meta
+file.
+
+Two classes are provided: smBMFont and smBMFontw. smBMFont accepts char stings
+and smBMFontw accepts wchar strings. Their interfaces are the same.
+
+smBMFontw uses std::map, so huge font files are discouraged.
+
+Public members of smBMFont(w):
+-loadAnmFromMemory(char* ptr,DWORD size)
+ Loads an anm file describing the font from the given memory block.
+-close()
+ Closes the anm file and frees any resources used by the class.
+-render(float x,float y,float z,int align,float *rw,const char*/wchar_t* text)
+ Render the given text at (x,y,z) with the given align.
+ ailgns can be one of the macros ALIGN_LEFT/ALIGN_RIGHT/ALIGN_CENTER.
+ if rw is not NULL, the width of the string will be returned to the pointer.
+ '\n' is processed correctly. Other control characters are not processed and
+ may not render correctly.
+-printf(float x,float y,float z,int align,float *rw,const wchar_t* format,...)
+ Render formated string at (x,y,z) with the given align.
+ The parameters are the same as the render function.
+-setColor(DWORD col)
+ Sets the color for the next rendering.
+-setBlend(int blend)
+ Sets blending mode for the next rendering.
+-setScale(int scale)
+ Sets the font scaling.
+
+smColor========================================================================
+The extension implements two color classes: smColorRGBA and smColorHSVA.
+
+Public members of smColorRGBA:
+-float r,g,b,a							R/G/B/A components, ranged 0..1
+-Default construction op				Sets all components to zero
+-Construction op from a hardware color
+-Construction op from components
+-Default destuction op
+-void clamp()							clamps all components to their range
+-operator + - *							color operations
+-operator * /							scalar operations
+-void setHWColor(DWORD col)				Sets the color accroding to the given
+										hardware color
+-DWORD getHWColor()						Gets the hardware color. The color is
+										automatically clamped.
+
+Public members of smColorHSVA:
+-float h,s,v,a							R/G/B/A components, ranged 0..1
+-Default construction op				Sets all components to zero
+-Construction op from a hardware color
+-Construction op from components
+-Default destuction op
+-void clamp()							clamps all components to their range
+-operator + - *							color operations
+-operator * /							scalar operations
+-void setHWColor(DWORD col)				Sets the color accroding to the given
+										hardware color
+-DWORD getHWColor()						Gets the hardware color. The color is
+										automatically clamped.
+
+smDataPack=====================================================================
+The extension implements a data packaging method for increased integrity.
+smDtpFileR is used to read a dtp file, while smDtpFileW is used to create a 
+dtp file.
+The format of the dtp file is described in the file datapackFormat.
+
+Public members of smDtpFileR:
+-bool openDtp(const char* path)
+ Opens a compressed dtp from the given path.
+ Returns true on succeed, false on failure.
+-bool openDtpFromMemory(char* ptr,DWORD size)
+ Opens a uncompressed dtp from the memory block.
+ Returns true on succeed, false on failure.
+-void closeDtp()
+ Close the opened dtp file. Release any internal allocated resources.
+-char* getFirstFile()
+ Returns the internal path of the first file in the dtp.
+-char* getLastFile()
+ Returns the internal path of the last file in the dtp.
+-char* getNextFile(const char* path)
+ Returns the internal path of the next file in the dtp.
+-char* getPrevFile()
+ Returns the internal path of the previous file in the dtp.
+-char* getFilePtr(const char* path)
+ Get the pointer to the file required.
+ The file is loaded into memory during the process.
+-void releaseFilePtr(const char* path)
+ Release the file in the memory.
+ Always free the file with this function.
+-DWORD getFileSize(const char* path)
+ Get the file size in bytes of the file required.
+
+Public members of smDtpFileW:
+-bool addFile(const char* path,const char* realpath)
+ Adds a file to the temporary dtp.
+ path is used as the internal path, realpath is the path of the data
+ to be packed.
+-bool writeDtp(const char* path)
+ Writes the temporary dtp to a file.
+ The dtp file is compressed.
+ The temporary dtp file is deleted after the process.
+
+A simple DaTaPack utility implementation is in the folder dtputil.
+smEntity=======================================================================
+The extension implements two entity classes for easy entity rendering.
+
+Public members of smEntity2D:
+-Consturction op from texture and
+ texture rectangle(SMTEX,float,float,float,float)
+-Construction op from texture and
+ texture rectangle(SMTEX,smTexRect)
+-Construction op from another smEntity2D
+-Destuction op
+-void Render(float x,float y,float rot,float wsc,float hsc)
+ Renders the entity at (x,y) with rotation rot (optional, in radians).
+ wsc/hsc (optional) controls the scaling in width and height.
+ if hsc is omitted, wsc is used as hsc. By default, wsc=1.
+-void setTexutre(SMTex tex)
+ Sets the texture of the entity.
+-void setTextureRect4f(float _x,float _y,float _w,float _h)
+ void setTextureRectv(smTextRect rect)
+ Sets the area of texture used for rendering.
+-void setColor(DWORD col,int v)
+ Sets the color of the entity or one of the vertexes of the entity.
+ If v is omitted or v is out of the range 0..3, all four vertexes are
+ re-colored.
+-void setZ(float z,int v)
+ Sets the z value of the entity or one of the vertexes of the entity.
+ If v is omitted or v is out of the range 0..3, all four vertexes are
+ re-positioned.
+-void setBlend(int blend)
+ Sets the blend mode of the entity. The macros BLEND_* are used.
+-void setCentre(float x,float y)
+ Sets the centre of the entity. The centre is used as the rotation centre.
+ When rendered, the centre is used to position the entity.
+
+smEntity3D is almost the same as smEntity2D, except the lack of setZ function
+and some difference in the rendering methods. Further more, smEntity3D always
+writes to the Z buffer when rendered.
+-void Render9f(float x,float y,float z,float ra,float rx,float ry,float rz,
+ float wsc,float hsc)
+ Renders the 3D entity at (x,y,z).
+ The entity is rotated by the parameters (ra,rx,ry,rz), in which ra specifies
+ the angle of rotation in radians and (rx,ry,rz) specify the rotation axis.
+ The rotation parameters are optional. The vector (rx,ry,rz) is automatically
+ normalized.
+ wsc/hsc (optional) controls the scaling in width and height.
+ if hsc is omitted, wsc is used as hsc. By default, wsc=1.
+-void Renderfv(float* pos,float* rot,float* scale)
+ Equivalent to Render9f(pos[0],pos[1],pos[2],rot[0],rot[1],rot[2],rot[3]
+ scale[0],scale[1]).
+
+smGrid=========================================================================
+The extension implements a grid used for rendering distorted entity.
+Grid sample:
++-----+-----+
+|     |     |
+|     |     |
+|     |     |
++-----+-----+
+|     |     |
+|     |     |
+|     |     |
++-----+-----+
+This is a simple 3*3 grid, undistorted. If we fit a texture onto it we will
+see a rectangle with that texture.
+Now we can distort it like this:
++-----+-----+
+ \     \     \
+  \     \     \
+   \     \     \
+    +-----+-----+
+     \     \     \
+      \     \     \
+       \     \     \
+        +-----+-----+
+If we fit a texture onto this grid, we will see a parallelogram (probably
+glitched because it's only a 3*3 grid).
+The grid looks better when the resolution is higher.
+With this extension we can implement water/lens/wrapping effect and curved
+lasers easily.
+The indicatorCircular in the smIndicator extension is also implemented with
+smGrid.
+
+Public members of smGrid:
+-Default construction op (int,int)
+ This construction op requires the column&row count of the grid.
+-Copy construction op(const smGrid &copy)
+ Constructs a new smGrid copying the given one.
+-Default destuction op.
+-operator =
+-void render(float x,float y)
+ Renders the grid at (x,y). (x,y) is the top left coordinate.
+-void clear(DWORD color)
+ Resets the grid with the optional color.
+-void setTexutre(SMTEX tex)
+ Sets the texture of the grid.
+-void setTextureRect4f(float _x,float _y,float _w,float _h)
+ void setTextureRectv(smTexRect rect)
+ Sets the texture region used by the grid.
+-void setBlend(int blend)
+ Sets the blend mode of the grid.
+-void setColor(int c,int r,DWORD col)
+ Sets the color of the node at row r column c.
+ You can create interesting colorful effects with this.
+-void setPos(int c,int r,float x,float y,float z,int ref)
+ Sets the positioning of the node at row r column c.
+ The z value is always directly set.
+ The x/y values are set according the reference setting.
+ Possible references are:
+ GRID_REFNODE: reference point is the node position of a regular grid
+ GRID_REFTOPLEFT: reference point is the top left corner of the grid
+ GRID_REFCENTER: reference point is the centre of the grid
+ GRID_REFCURRENT: reference point is the current position of the node
+
+smIndicator====================================================================
+The extension implements several value indicators.
+
+Public members of class indicatorCircular/indicatorLinear:
+-void init(double r,double thkns,BYTE a,SMTEX tex,smTexRect tr)
+ Initialize the indicator with radius r, thickness thkns.
+ a is used as the initial alpha.
+-void overrideColor(DWORD col)
+ Overrides the default dynamic color with the static color.
+-void setAlpha(BYTE a)
+ Sets the indicator alpha
+-void setValue(double v)
+ Sets the value indicated by the indicator.
+ The value should be within 0..1.
+
+smMath=========================================================================
+The extension provides several math routines.
+
+Common math routines:
+double smMath::deg2rad(double deg)		converts degree to radian
+double smMath::rad2deg(double deg)		converts radian to degree
+double smMath::clamprad(double a)		clamps the given angle to [0,2*PI]
+double smMath::clampdeg(double a)		clamps the given angle to [0,360]
+
+2D Vector: smvec2d
+double x,y								coordinates
+Constructor(double,double)				constructs the vector with the given
+										coordinates
+Default constructor
+double l()								returns the length of the vector
+void normalize()						normalizes the vector
+smvec2d getNormalized()					returns the normalized vector
+void swap()								swaps the x,y coordinates
+void rotate(double rad)					rotate the vector by rad radians
+smvec2d getRotate(double rad)			returns the rotated vector
+smvec2d operator - +
+smvec2d/double operator *				scalar/(length of) cross product
+double operator |						point product
+double operator ^						angle between the vectors
+
+3D Vector: smvec3d
+double x,y,z							coordinates
+Constructor(double,double,double)		constructs the vector with the given
+										coordinates
+Constructor(smvec2d)					constructs the vector from the 2d
+										vector with z=0
+Default constructor
+double l()								returns the length of the vector
+void normalize()						normalizes the vector
+smvec3d getNormalized()					returns the normalized vector
+smvec3d operator - +
+smvec3d operator *						scalar/cross product
+smvec3d operator |						point product
+double operator ^						angle between the vectors
+
+Transformation matrix: smMatrix
+double m[16]
+sf  0  1  2  3
+0  00 04 08 12
+1  01 05 09 13
+2  02 06 10 14
+3  03 07 11 15
+Default constructor
+Copy constructor
+operator []								with this you can access the matrix
+										like (smMatrix)a[col][row]
+void clear()							sets the whole matrix to 0
+void loadIdentity()						sets the matrix to the identity matrix
+void rotate(double,double,double,double)
+										rotates the vector by (a,x,y,z) where
+										a is the rotation angle in radians and
+										(x,y,z) is the rotation axis.
+void lookat(double *eye,double *at,double *up)
+										all vectors have three elements.
+										This function produces a "look at"
+										matrix.
+										When the identity view matrix is
+										multiplied by the "look at" matrix, it
+										seems that you are at the "eye"
+										position, looking at the "at" opsition.
+										The up vector is used to determine the
+										pitch of the camera.
+operator *								Matrix-matrix multiplication.
+operator *								Matrix-vector multiplication.
+smProgresser===================================================================
+The extension implements several progressers useful for making transitions.
+All progressers work in the same way: it returns a value within [a,b] according
+to the current progress.
+
+All progresser have these functions publicly accessible:
+void init(double _a,double _b,double _lim,[additional parameters])
+Initializes the progresser with a=_a, b=_b and maximum progress _lim.
+void launch()
+Launch the progresser. This function actually resets the progresser.
+void update(double delta)
+Updates the progress with delta value delta.
+bool isDone()
+Check if the progresser has completed its progress.
+double getValue()
+Gets the current progresser value.
+double getPercentage()
+Gets the current progress percentage(always linear).
+double getDelta()
+Gets the current delta between progresser value and a.
+double getElapsed()
+Gets the current elapsed progress.
+
+Currently two types of progressers are implemented.
+-smProgresserLinear
+Normal linear progresser.
+-smProgresserCurve
+Curve progresser. This progresser requires an additional parameter to
+Initialize, which is the radius of the curve. The bigger abs(curvepara) is,
+the steeper the progressing curve will be. If curvepara=0, it will act
+as the linear progresser. The sign of the parameter controls the bending
+direction of the curve.
+
+smRandom=======================================================================
+The extension implements a pseudo random number generator.
+Pseudo random number generator always generates the same sequence of number
+provided that the seed and the calling sequence is the same.
+
+Public members of smRandomEngine
+void setSeed(unsigned int seed)
+Sets the random seed. The seed affects the next number generated.
+int nextInt(int min,int max)
+Generate a random integer. The seed is updated too.
+Please note that max is not necessarily greater than min.
+double nextDouble(double min,double max)
+Generate a random double. The seed is updated too.
+Please note that max is not necessarily greater than min.
+smTTFont=======================================================================
+The extension implements a freetype interface for SMELT.
+Two classes are implemented: smTTChar and smTTFont. smTTChar is implemented for
+internal use and should not be used outside the smTTFont class. Class smTTFont
+provides all interfaces for font rendering.
+
+smTTFont uses std::map to cache character glyphs. The cache is manually managed
+by the application. A cache too large in size may cause lags.
+
+Public members of smTTFont:
+-bool loadTTF(const char* path,int pt)
+ Loads a font from the given path. pt is used as the size of the font in
+ points.
+-bool loadTTFFromMemory(char* ptr,DWORD size,int pt)
+ Loads a font from the given memory block. pt is used as the size of the font
+ in points.
+-void releaseTTF()
+ Clear the cache and release the loaded font.
+-float getWidth()
+-float getHeight()
+ Gets the width/height of the buffered string.
+ The buffered string is modified by the updateString function.
+-void updateString(const wchar_t *format,...)
+ Update the buffered string.
+ Update the buffer only when you need to do so because this function is
+ relatively slow.
+ '\n' is processed correctly.
+ If a char is in the internal cache, it will be reused. Otherwise it will be
+ added to the cache.
+-void render(float x,float y,DWORD col,int align)
+ Renders the buffered string.
+ The align mode ALIGN_CENTER is not supported.
+ (x,y) defines the top-left coordinate of the rendered text when using
+ ALIGN_LEFT while it defines the bottom-right coordinate when using
+ ALIGN_RIGHT.
+ col defines the color of the rendered text.
+-DWORD getCacheSize()
+ Gets the internal cache size.
+ It is advised to keep the cache size relatively low, generally below
+ 100 thousand.
+-void clearCache()
+ Clear the internal cache.
