@@ -147,7 +147,7 @@ int main()
 	fonttest.setScale(1.);
 
 	//load the truetype font.
-	if(!ttftest.loadTTF("/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",18))sm->smLog("ttf load error!");
+	if(!ttftest.loadTTF("/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",18))if(!ttftest.loadTTF("/usr/share/fonts/wenquanyi/wqy-microhei/wqy-microhei.ttc",18))sm->smLog("ttf load error!");
 
 	//load the texture.
 	tex=sm->smTextureLoad("SpriteSheet.png");

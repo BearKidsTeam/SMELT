@@ -11,8 +11,8 @@ A D3D version will be put into construction _soon_.
 
 Building
 --------
-Building the SDL version of SMELT is only officially tested
-on debian sid and debian jessie.
+Building the SDL version of SMELT is now officially tested
+on debian sid, debian jessie and Arch Linux.
 
 Theoretically the SDL version should work on Windows
 with little modification :)
