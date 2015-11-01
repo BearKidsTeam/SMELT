@@ -9,8 +9,7 @@ Currently only the SDL version is available.
 
 A D3D version will be put into construction _soon_.
 
-Building
---------
+## Building
 Building the SDL version of SMELT is now officially tested
 on debian sid, debian jessie and Arch Linux.
 
@@ -26,8 +25,9 @@ To build a module, just run make in the corresponding folder.
 
 The example must be built last.
 
-TODOs:
-------
+SMELT and applications that uses SMELT *REQUIRES* C++11 to build.
+
+## TODOs:
 * Example code.
 * Better documentation.
 * D3D version.
