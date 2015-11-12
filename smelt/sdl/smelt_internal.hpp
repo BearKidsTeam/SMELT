@@ -25,6 +25,7 @@
 #include <AL/alext.h>
 #include <ogg/ogg.h>
 #include <vorbis/vorbisfile.h>
+#include <smelt_config.hpp>
 #ifdef WIN32
 #include <windows.h>
 #include <intrin.h>
@@ -42,8 +43,6 @@
 #include "glimports.hpp"
 #undef GL_PROC
 
-#define SRC_MAX 128
-
 class TOpenGLDevice
 {
 public:
@@ -58,8 +57,6 @@ public:
 	bool have_GL_EXT_texture_compression_s3tc;
 	bool have_GL_ARB_vertex_buffer_object;
 };
-
-#define VERTEX_BUFFER_SIZE 4000
 
 struct glTexture;
 class TRenderTargetList
