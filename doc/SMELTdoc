@@ -158,10 +158,13 @@ float smGetTime() [core/FPS]
 Gets the time in milliseconds since the call to smInit().
 
 SMSFX smSFXLoad(const char *path) [core/SFX]
-Loads a sound file from the given path. Only ogg files are supported.
+Loads a sound file from the given path. Only ogg and wav files are supported.
+Further more, due to the restrictions of OpenAL, only 8/16bit mono/stereo formats
+are supported.
 
 SMSFX smSFXLoadFromMemory(const char *ptr,DWORD size) [core/SFX]
-Loads a sound file from the given memory block. Only ogg files are supported.
+Loads a sound file from the given memory block. Limitations are the same to that
+of smSFXLoad.
 
 SMCHN smSFXPlay(SMSFX fx,int vol=100,int pan=0,float pitch=1.,bool loop=0)
 [core/SFX]
@@ -170,7 +173,7 @@ A channel is generated and can be used to control the playing of the SFX.
 The channel is valid until it stops.
 Volume should be 0~100.
 Panning should be -100~100.
-The values would be clamped to the range given above.
+The values will be clamped to the range given above.
 
 float smSFXGetLengthf(SMSFX fx) [core/SFX]
 Gets the sound length in seconds.

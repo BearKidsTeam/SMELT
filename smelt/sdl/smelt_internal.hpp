@@ -12,6 +12,7 @@
 #define SMELT_INTERNAL_H
 
 #include "../../include/smelt.hpp"
+#include "smelt_config.hpp"
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -25,7 +26,6 @@
 #include <AL/alext.h>
 #include <ogg/ogg.h>
 #include <vorbis/vorbisfile.h>
-#include <smelt_config.hpp>
 #ifdef WIN32
 #include <windows.h>
 #include <intrin.h>
