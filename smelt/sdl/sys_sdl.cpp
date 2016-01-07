@@ -150,7 +150,7 @@ void SMELT_IMPL::smFinale()
 void SMELT_IMPL::smMainLoop()
 {
 	if(!hwnd)return smLog("%s:" SLINE ": Error: SMELT is not initialized.\n",SYS_SDL_SRCFN);
-	if(!pUpdateFunc) return smLog("%s:" SLINE ": UpdateFunc is not defined.\n",SYS_SDL_SRCFN);
+	if(!pUpdateFunc&&!updateHandler) return smLog("%s:" SLINE ": UpdateFunc is not defined.\n",SYS_SDL_SRCFN);
 	Active=true;
 	for(;;)
 	{
@@ -168,7 +168,8 @@ void SMELT_IMPL::smMainLoop()
 				if(timeDelta>0.2)timeDelta=fixDelta?fixDelta/1000.:.01;
 				++fcnt;updateFPSDelay+=timeDelta;t0=sdlticks;timeS+=timeDelta;
 				if(updateFPSDelay>1){fps=fcnt/updateFPSDelay;updateFPSDelay=.0;fcnt=0;}
-				if(pUpdateFunc())break;
+				if(pUpdateFunc){if(pUpdateFunc())break;}
+				if(updateHandler){if(updateHandler->handlerFunc())break;}
 				for(int i=1;i<=255;++i)keylst[i]=((keyz[i]&4)!=0);
 				clearQueue();
 			}
@@ -179,6 +180,7 @@ void SMELT_IMPL::smMainLoop()
 	clearQueue();Active=false;
 }
 void SMELT_IMPL::smUpdateFunc(smHook func){pUpdateFunc=func;}
+void SMELT_IMPL::smUpdateFunc(smHandler* h){updateHandler=h;}
 void SMELT_IMPL::smUnFocFunc(smHook func){pUnFocFunc=func;}
 void SMELT_IMPL::smFocFunc(smHook func){pFocFunc=func;}
 void SMELT_IMPL::smQuitFunc(smHook func){pQuitFunc=func;}
@@ -248,7 +250,7 @@ float SMELT_IMPL::smGetTime(){return timeS;}
 SMELT_IMPL::SMELT_IMPL()
 {
 	hwnd=NULL;Active=false;memset(curError,0,sizeof(curError));
-	pUpdateFunc=pUnFocFunc=pFocFunc=pQuitFunc=NULL;
+	pUpdateFunc=pUnFocFunc=pFocFunc=pQuitFunc=NULL;updateHandler=NULL;
 	Icon=NULL;strcpy(winTitle,"untitled");scrw=dispw=800;scrh=disph=600;
 	windowed=vsync=false;memset(logFile,0,sizeof(logFile));
 	limfps=0;hideMouse=true;noSuspend=false;

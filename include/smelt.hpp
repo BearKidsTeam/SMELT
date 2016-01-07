@@ -71,6 +71,10 @@ typedef size_t SMCHN;//Audio channel Handle
 
 //callback function pointer
 typedef bool (*smHook)();
+class smHandler
+{
+	public: virtual bool handlerFunc()=0;
+};
 
 //Special FPS modes
 //Unlimited FPS
@@ -167,6 +171,7 @@ public:
 	 * It returns true when you want to terminate the main loop.
 	 */
 	virtual void smUpdateFunc(smHook func)=0;
+	virtual void smUpdateFunc(smHandler* h)=0;
 	/**
 	 * Sets the focus lost function.
 	 * Focus lost function is called when the application window loses

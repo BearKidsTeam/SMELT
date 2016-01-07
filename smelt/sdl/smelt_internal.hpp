@@ -89,6 +89,7 @@ public:
 	virtual void smFinale();
 	virtual void smMainLoop();
 	virtual void smUpdateFunc(smHook func);
+	virtual void smUpdateFunc(smHandler* h);
 	virtual void smUnFocFunc(smHook func);
 	virtual void smFocFunc(smHook func);
 	virtual void smQuitFunc(smHook func);
@@ -174,6 +175,7 @@ public:
 	bool (*pUnFocFunc)();
 	bool (*pFocFunc)();
 	bool (*pQuitFunc)();
+	smHandler *updateHandler;
 	const char *Icon;
 	char winTitle[256];
 	int scrw,scrh;
