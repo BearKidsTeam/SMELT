@@ -71,6 +71,7 @@ typedef size_t SMCHN;//Audio channel Handle
 
 //callback function pointer
 typedef bool (*smHook)();
+//Wrapper abstract class for a function that can hook into SMELT
 class smHandler
 {
 	public: virtual bool handlerFunc()=0;
@@ -86,6 +87,13 @@ class smHandler
 #define PRIM_LINES		2
 #define PRIM_TRIANGLES	3
 #define PRIM_QUADS		4
+
+//Texture Options
+#define TPOT_NONPOT		0
+#define TPOT_POT		1
+
+#define TFLT_LINEAR		0
+#define TFLT_NEAREST	1
 
 //Texture Region structure
 struct smTexRect
@@ -171,6 +179,11 @@ public:
 	 * It returns true when you want to terminate the main loop.
 	 */
 	virtual void smUpdateFunc(smHook func)=0;
+	/**
+	 * Sets the update function via a smHandler class.
+	 * Update function is called every frame.
+	 * It returns true when you want to terminate the main loop.
+	 */
 	virtual void smUpdateFunc(smHandler* h)=0;
 	/**
 	 * Sets the focus lost function.
@@ -179,6 +192,7 @@ public:
 	 * The return value of the focus lost function has no effect.
 	 */
 	virtual void smUnFocFunc(smHook func)=0;
+	virtual void smUnFocFunc(smHandler* h)=0;
 	/**
 	 * Sets the focus gain function.
 	 * Focus gain function is called when the application window gains
@@ -186,6 +200,7 @@ public:
 	 * The return value of the focus gain function has no effect.
 	 */
 	virtual void smFocFunc(smHook func)=0;
+	virtual void smFocFunc(smHandler* h)=0;
 	/**
 	 * Sets the quit function.
 	 * Quit function is called when the user attempts to close the
@@ -194,6 +209,7 @@ public:
 	 * Otherwise the main loop will break.
 	 */
 	virtual void smQuitFunc(smHook func)=0;
+	virtual void smQuitFunc(smHandler* h)=0;
 	/**
 	 * Sets the window title of the application window.
 	 * The default window title is "untitled".
@@ -352,6 +368,7 @@ public:
 	virtual SMTEX smTextureLoad(const char *path)=0;
 	virtual SMTEX smTextureLoadFromMemory(const char *ptr,DWORD size)=0;
 	virtual void smTextureFree(SMTEX tex)=0;
+	virtual void smTextureOpt(int potopt=TPOT_NONPOT,int filter=TFLT_LINEAR)=0;
 	virtual int smTextureGetWidth(SMTEX tex,bool original=false)=0;
 	virtual int smTextureGetHeight(SMTEX tex,bool original=false)=0;
 	virtual DWORD* smTextureLock(SMTEX tex,int l,int t,int w,int h,bool ro=true)=0;

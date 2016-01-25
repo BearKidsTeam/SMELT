@@ -182,8 +182,11 @@ void SMELT_IMPL::smMainLoop()
 void SMELT_IMPL::smUpdateFunc(smHook func){pUpdateFunc=func;}
 void SMELT_IMPL::smUpdateFunc(smHandler* h){updateHandler=h;}
 void SMELT_IMPL::smUnFocFunc(smHook func){pUnFocFunc=func;}
+void SMELT_IMPL::smUnFocFunc(smHandler* h){unFocHandler=h;}
 void SMELT_IMPL::smFocFunc(smHook func){pFocFunc=func;}
+void SMELT_IMPL::smFocFunc(smHandler* h){focHandler=h;}
 void SMELT_IMPL::smQuitFunc(smHook func){pQuitFunc=func;}
+void SMELT_IMPL::smQuitFunc(smHandler* h){quitHandler=h;}
 void SMELT_IMPL::smWinTitle(const char *title){strcpy(winTitle,title);}
 bool SMELT_IMPL::smIsActive(){return Active;}
 void SMELT_IMPL::smNoSuspend(bool para){noSuspend=para;}
@@ -250,7 +253,8 @@ float SMELT_IMPL::smGetTime(){return timeS;}
 SMELT_IMPL::SMELT_IMPL()
 {
 	hwnd=NULL;Active=false;memset(curError,0,sizeof(curError));
-	pUpdateFunc=pUnFocFunc=pFocFunc=pQuitFunc=NULL;updateHandler=NULL;
+	pUpdateFunc=pUnFocFunc=pFocFunc=pQuitFunc=NULL;
+	updateHandler=unFocHandler=focHandler=quitHandler=NULL;
 	Icon=NULL;strcpy(winTitle,"untitled");scrw=dispw=800;scrh=disph=600;
 	windowed=vsync=false;memset(logFile,0,sizeof(logFile));
 	limfps=0;hideMouse=true;noSuspend=false;
@@ -263,8 +267,8 @@ SMELT_IMPL::SMELT_IMPL()
 void SMELT_IMPL::focusChange(bool actif)
 {
 	Active=actif;
-	if(actif)pFocFunc?pFocFunc():0;
-	else pUnFocFunc?pUnFocFunc():0;
+	if(actif){pFocFunc?pFocFunc():0;focHandler?focHandler->handlerFunc():0;}
+	else {pUnFocFunc?pUnFocFunc():0;unFocHandler?unFocHandler->handlerFunc():0;};
 }
 bool SMELT_IMPL::procSDLEvent(const SDL_Event &e)
 {
@@ -291,8 +295,13 @@ bool SMELT_IMPL::procSDLEvent(const SDL_Event &e)
 			}
 		break;
 		case SDL_QUIT:
-			if(pSM->pQuitFunc&&!pSM->pQuitFunc())break;
-		return false;
+		{
+			bool accepted=true;
+			if(pSM->pQuitFunc&&pSM->pQuitFunc())accepted=false;
+			if(pSM->quitHandler&&quitHandler->handlerFunc())accepted=false;
+			if(accepted)return false;
+		}
+		break;
 		case SDL_KEYDOWN:
 			keymods=(SDL_Keymod)e.key.keysym.mod;
 			if((keymods&KMOD_ALT)&&((e.key.keysym.sym==SDLK_RETURN)||(e.key.keysym.sym==SDLK_KP_ENTER)))

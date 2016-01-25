@@ -36,6 +36,8 @@ SMINP_*: Key modifiers. They can be or'd together.
 SMKST_*: Key states.
 SMK_*: Keys.
 
+TPOT_*, TFLT_*: Texture Options.
+
 Sturctures=====================================================================
 smInpEvent: Input event structure.
 -chcode: Char code.
@@ -97,20 +99,34 @@ proper occasion.
 This function requires the UpdateFunc set and the initialization of the SMELT 
 interface.
 
-void smUpdateFunc(smHook func) [core]
+void smUpdateFunc(smHook func)  [core]
+void smUpdateFunc(smHandler* h) [core]
 Sets the update function.
 The update function returns bool and takes no parameters.
 If the update function returns true, the main loop will break, otherwise
 the main loop runs perpetually.
 The update function is called every frame.
+If both the handler and the hook are set, the hook will be executed first.
 
-void smUnFocFunc(smHook func) [core]
-Sets the unfocus function.
+void smUnFocFunc(smHook func)  [core]
+void smUnFocFunc(smHandler* h) [core]
+Sets the unfocus event handler.
 The unfocus function is called when the application window loses focus.
+If both the handler and the hook are set, the hook will be executed first.
 
-void smFocFunc(smHook func) [core]
-Sets the focus function.
+void smFocFunc(smHook func)  [core]
+void smFocFunc(smHandler* h) [core]
+Sets the focus event handler.
 The focus functions is called when the application window gains focus.
+If both the handler and the hook are set, the hook will be executed first.
+
+void smQuitFunc(smHook func)  [core]
+void smQuitFunc(smHandler* h) [core]
+Sets the quit event handler.
+Called when the user send a quit request to the application (e.g. by pressing
+the close button).
+If the handler/hook returns true, the quit request will be rejected and the
+application will keep running.
 
 void smWinTitle(const char* title) [core]
 Sets the application window title.
@@ -377,6 +393,14 @@ mipmapping doesn't work in OpenGL versions.
 
 void smTextureFree(SMTEX tex) [core/GFX]
 Release the texture from memory.
+
+void smTextureOpt(int potopt=TPOT_NONPOT,int filter=TFLT_LINEAR) [core/GFX]
+Sets texture options.
+TPOT_POT: textures dimensions are resized to the minimal power of two value.
+TPOT_NONPOT: use textures whose dimensions are not power of two directly.
+Please note that only power-of-two textures supports texture repeating.
+TFLT_LINEAR: use the linear filter for texture scaling.
+TFLT_NEAREST: use the nearest filter for texture scaling.
 
 int smTextureGetWidth(SMTEX tex,bool original=false) [core/GFX]
 Gets the width of the texture.

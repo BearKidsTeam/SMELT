@@ -343,6 +343,45 @@ void SMELT_IMPL::smTextureFree(SMTEX tex)
 		delete ptex;
 	}
 }
+void SMELT_IMPL::smTextureOpt(int potopt,int filter)
+{
+	batchOGL();
+	if(potopt==TPOT_NONPOT)
+	{
+		if(pOpenGLDevice->have_GL_ARB_texture_rectangle)
+		pOpenGLDevice->TextureTarget=GL_TEXTURE_RECTANGLE_ARB;
+		else if(pOpenGLDevice->have_GL_ARB_texture_non_power_of_two)
+		pOpenGLDevice->TextureTarget=GL_TEXTURE_2D;
+		else pOpenGLDevice->TextureTarget=GL_TEXTURE_2D;
+		pOpenGLDevice->glDisable(GL_TEXTURE_2D);
+		if(pOpenGLDevice->have_GL_ARB_texture_rectangle)pOpenGLDevice->glDisable(GL_TEXTURE_RECTANGLE_ARB);
+		pOpenGLDevice->glEnable(pOpenGLDevice->TextureTarget);
+		pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+		pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+		pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
+	}
+	if(potopt==TPOT_POT)
+	{
+		pOpenGLDevice->TextureTarget=GL_TEXTURE_2D;
+		pOpenGLDevice->glDisable(GL_TEXTURE_2D);
+		if(pOpenGLDevice->have_GL_ARB_texture_rectangle)pOpenGLDevice->glDisable(GL_TEXTURE_RECTANGLE_ARB);
+		pOpenGLDevice->glEnable(pOpenGLDevice->TextureTarget);
+		pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_WRAP_S,GL_REPEAT);
+		pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_WRAP_T,GL_REPEAT);
+		pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_WRAP_R,GL_REPEAT);
+	}
+	filtermode=filter;
+	if(filter==TFLT_NEAREST)
+	{
+		pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+		pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+	}
+	if(filter==TFLT_LINEAR)
+	{
+		pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+		pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	}
+}
 int SMELT_IMPL::smTextureGetWidth(SMTEX tex,bool original)
 {
 	if(original)
@@ -594,8 +633,16 @@ void SMELT_IMPL::batchOGL(bool endScene)
 		float twm=1.,thm=1.;
 		if(primTex)
 		{
-			pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-			pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+			if(filtermode==TFLT_NEAREST)
+			{
+				pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+				pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+			}
+			if(filtermode==TFLT_LINEAR)
+			{
+				pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+				pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+			}
 			glTexture *ptex=(glTexture*)primTex;
 			if(pOpenGLDevice->TextureTarget==GL_TEXTURE_RECTANGLE_ARB)
 			{twm=ptex->rw;thm=ptex->rh;}
@@ -881,6 +928,7 @@ bool SMELT_IMPL::confOGL()
 	pOpenGLDevice->glEnable(GL_ALPHA_TEST);
 	pOpenGLDevice->glAlphaFunc(GL_GEQUAL,1.0f/255.0f);
 	pOpenGLDevice->glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+	filtermode=TFLT_LINEAR;
 	pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	//GL_REPEAT doesn't work with non-pot textures...

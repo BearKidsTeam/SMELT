@@ -91,8 +91,11 @@ public:
 	virtual void smUpdateFunc(smHook func);
 	virtual void smUpdateFunc(smHandler* h);
 	virtual void smUnFocFunc(smHook func);
+	virtual void smUnFocFunc(smHandler* h);
 	virtual void smFocFunc(smHook func);
+	virtual void smFocFunc(smHandler* h);
 	virtual void smQuitFunc(smHook func);
+	virtual void smQuitFunc(smHandler* h);
 	virtual void smWinTitle(const char* title);
 	virtual bool smIsActive();
 	virtual void smNoSuspend(bool para);
@@ -159,6 +162,7 @@ public:
 	virtual SMTEX smTextureLoad(const char *path);
 	virtual SMTEX smTextureLoadFromMemory(const char *ptr,DWORD size);
 	virtual void smTextureFree(SMTEX tex);
+	virtual void smTextureOpt(int potopt=TPOT_NONPOT,int filter=TFLT_LINEAR);
 	virtual int smTextureGetWidth(SMTEX tex,bool original=false);
 	virtual int smTextureGetHeight(SMTEX tex,bool original=false);
 	virtual DWORD* smTextureLock(SMTEX tex,int l,int t,int w,int h,bool ro=true);
@@ -175,7 +179,7 @@ public:
 	bool (*pUnFocFunc)();
 	bool (*pFocFunc)();
 	bool (*pQuitFunc)();
-	smHandler *updateHandler;
+	smHandler *updateHandler,*unFocHandler,*focHandler,*quitHandler;
 	const char *Icon;
 	char winTitle[256];
 	int scrw,scrh;
@@ -195,7 +199,7 @@ public:
 	TRenderTargetList *curTarget;
 	TTextureList *textures;
 	bool tdmode;
-	int primcnt,primType,primBlend;
+	int primcnt,primType,primBlend,filtermode;
 	SMTEX primTex;
 	bool zbufenabled;
 	bool checkGLExtension(const char *extlist,const char *ext);
