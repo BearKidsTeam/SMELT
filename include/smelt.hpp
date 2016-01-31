@@ -340,6 +340,7 @@ public:
 
 	virtual void smGetMouse2f(float *x,float *y)=0;
 	virtual void smSetMouse2f(float x,float y)=0;
+	virtual void smSetMouseGrab(bool enabled)=0;
 	virtual int smGetWheel()=0;
 	virtual bool smIsMouseOver()=0;
 	virtual int smGetKeyState(int key)=0;

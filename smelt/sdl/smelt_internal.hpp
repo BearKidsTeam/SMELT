@@ -134,6 +134,7 @@ public:
 
 	virtual void smGetMouse2f(float *x,float *y);
 	virtual void smSetMouse2f(float x,float y);
+	virtual void smSetMouseGrab(bool enabled);
 	virtual int smGetWheel();
 	virtual bool smIsMouseOver();
 	virtual int smGetKeyState(int key);

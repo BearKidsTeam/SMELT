@@ -22,6 +22,7 @@ bool SMELT_IMPL::smGetInpEvent(smInpEvent *e)
 }
 void SMELT_IMPL::smGetMouse2f(float *x,float *y){*x=posx,*y=posy;}
 void SMELT_IMPL::smSetMouse2f(float x,float y){SDL_WarpMouseInWindow((SDL_Window*)hwnd,x,y);}
+void SMELT_IMPL::smSetMouseGrab(bool enabled){SDL_SetRelativeMouseMode((SDL_bool)(enabled?1:0));}
 int SMELT_IMPL::smGetWheel(){return posz;}
 bool SMELT_IMPL::smIsMouseOver(){return mouseOver;}
 int SMELT_IMPL::smGetKey(){return lkey;}
