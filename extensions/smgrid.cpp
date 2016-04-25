@@ -70,7 +70,7 @@ void smGrid::setBlend(int blend){quad.blend=blend;}
 void smGrid::setColor(int c,int r,DWORD col){if(c<cc&&r<rc)pos[r*cc+c].col=col;}
 void smGrid::setPos(int c,int r,float x,float y,float z,int ref)
 {
-	if(c<cc&&r<rc)
+	if(c>=0&&r>=0&&c<cc&&r<rc)
 	{
 		if(ref==GRID_REFCENTER)x+=cw*(cc-1)/2,y+=ch*(rc-1)/2;
 		if(ref==GRID_REFNODE)x+=c*cw,y+=r*ch;

@@ -23,10 +23,10 @@ template<class T>const T& max(const T& a,const T& b){return a>b?a:b;}
 class smMath
 {
 public:
-	double deg2rad(double deg){return deg/180.*PI;}
-	double rad2deg(double rad){return rad/PI*180.;}
-	double clamprad(double a){while(a<0)a+=2*PI;while(a>2*PI)a-=2*PI;return a;}
-	double clampdeg(double a){while(a<0)a+=360.;while(a>360)a-=360.;return a;}
+	static double deg2rad(double deg){return deg/180.*PI;}
+	static double rad2deg(double rad){return rad/PI*180.;}
+	static double clamprad(double a){while(a<0)a+=2*PI;while(a>2*PI)a-=2*PI;return a;}
+	static double clampdeg(double a){while(a<0)a+=360.;while(a>360)a-=360.;return a;}
 };
 class smvec2d
 {

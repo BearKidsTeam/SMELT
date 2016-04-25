@@ -1,5 +1,5 @@
 CC= g++
-CXXFLAGS= -c -Os -D_LINUX
+CXXFLAGS= -c -Os -D_LINUX -Wall -fPIC
 AR= ar
 
 all: objects archive clean

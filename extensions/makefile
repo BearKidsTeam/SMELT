@@ -1,5 +1,5 @@
 CC= g++
-CXXFLAGS= -c -std=c++11 -Wall -I../include -I/usr/include/freetype2
+CXXFLAGS= -c -g -std=c++11 -Wall -I../include -I/usr/include/freetype2 -fPIC
 
 all: objects archive clean
 

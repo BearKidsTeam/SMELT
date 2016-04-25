@@ -74,7 +74,9 @@ typedef bool (*smHook)();
 //Wrapper abstract class for a function that can hook into SMELT
 class smHandler
 {
-	public: virtual bool handlerFunc()=0;
+	public:
+		virtual ~smHandler(){}
+		virtual bool handlerFunc()=0;
 };
 
 //Special FPS modes
