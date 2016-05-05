@@ -53,7 +53,7 @@ bool SMELT_IMPL::smInit()
 	unsigned int nExIds=CPUInfo[0];
 	char *cpuName,*loced;cpuName=calloc(0x40,sizeof(char));loced=cpuName;
 	for(unsigned int i=0x80000000;i<=nExIds;++i)
-    {
+	{
 		__cpuid(CPUInfo, i);
 		if(i==0x80000002)
 			memcpy(cpuName,CPUInfo,sizeof(CPUInfo));
@@ -69,17 +69,17 @@ bool SMELT_IMPL::smInit()
 	GlobalMemoryStatus(&mem_st);
 	smLog("%s:" SLINE ": Memory: %ldK total, %ldK free\n", SYS_SDL_SRCFN,mem_st.dwTotalPhys/1024L,mem_st.dwAvailPhys/1024L);
 #else
-	system("uname -svm > os.out");
-	char osv[100];FILE* a=fopen("os.out","r");fgets(osv,100,a);fclose(a);
+	system("uname -svm > /tmp/os.out");
+	char osv[100];FILE* a=fopen("/tmp/os.out","r");fgets(osv,100,a);fclose(a);
 	osv[strlen(osv)-1]='\0';
 	smLog("%s:" SLINE ": OS: %s\n",SYS_SDL_SRCFN,osv);
-	system("rm os.out");
+	system("rm /tmp/os.out");
 
-	system("cat /proc/cpuinfo | grep name -m 1 > cpu.out");
-	a=fopen("cpu.out","r");fgets(osv,100,a);fclose(a);
+	system("cat /proc/cpuinfo | grep name -m 1 > /tmp/cpu.out");
+	a=fopen("/tmp/cpu.out","r");fgets(osv,100,a);fclose(a);
 	osv[strlen(osv)-1]='\0';char *ptr=osv;while(*ptr!=':')++ptr;ptr+=2;
 	smLog("%s:" SLINE ": CPU: %s\n",SYS_SDL_SRCFN,osv);
-	system("rm cpu.out");
+	system("rm /tmp/cpu.out");
 
 	a=fopen("/proc/meminfo","r");
 	unsigned totalm,freem;

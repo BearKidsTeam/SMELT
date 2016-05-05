@@ -1,5 +1,5 @@
 CC= g++
-CXXFLAGS= -c -g -std=c++11 -Wall -I/usr/include/SDL/ -I../include -D_LINUX -fPIC
+CXXFLAGS= -c -g -O2 -std=c++11 -Wall -I/usr/include/SDL/ -I../include -D_LINUX -fPIC
 
 all: objects-normal archive-normal
 

@@ -22,7 +22,7 @@
  *  GNU Lesser General Public License for more details.
  *
  *  You should have received a copy of the GNU Lesser General Public License
- *  along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with SMELT.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -362,6 +362,7 @@ public:
 	virtual void smRenderQuad(smQuad *q)=0;
 	virtual smVertex* smGetVertArray()=0;
 	virtual void smDrawVertArray(int prim,SMTEX texture,int blend,int _primcnt)=0;
+	virtual void smDrawCustomIndexedVertices(smVertex* vb,WORD* ib,int vbc,int ibc,int blend,SMTEX texture)=0;
 
 	virtual SMTRG smTargetCreate(int w,int h)=0;
 	virtual SMTEX smTargetTexture(SMTRG targ)=0;

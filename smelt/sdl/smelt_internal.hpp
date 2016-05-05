@@ -154,6 +154,7 @@ public:
 	virtual void smRenderQuad(smQuad *q);
 	virtual smVertex* smGetVertArray();
 	virtual void smDrawVertArray(int prim,SMTEX texture,int blend,int _primcnt);
+	virtual void smDrawCustomIndexedVertices(smVertex* vb,WORD* ib,int vbc,int ibc,int blend,SMTEX texture);
 
 	virtual SMTRG smTargetCreate(int w,int h);
 	virtual SMTEX smTargetTexture(SMTRG targ);

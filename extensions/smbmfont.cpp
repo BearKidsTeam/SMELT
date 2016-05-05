@@ -211,11 +211,11 @@ void smBMFontw::render(float x,float y,float z,int align,float *rw,const wchar_t
 }
 void smBMFontw::printf(float x,float y,float z,int align,float *rw,const wchar_t* format,...)
 {
-	wchar_t buf[1024];
+	wchar_t buf[1025];
 	va_list vl;
 	va_start(vl,format);
 	vswprintf(buf,sizeof(buf)-1,format,vl);
 	va_end(vl);
-	buf[sizeof(buf)-1]='\0';
+	buf[1024]=L'\0';
 	render(x,y,z,align,rw,buf);
 }

@@ -42,7 +42,7 @@ protected:
 	FT_Library ftlib;
 	FT_Face ttface;
 private:
-	wchar_t buf[1024];
+	wchar_t buf[1025];
 	std::map<wchar_t,smTTChar> chars;
 	float w,h;
 public:

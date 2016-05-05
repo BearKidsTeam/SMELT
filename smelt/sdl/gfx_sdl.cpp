@@ -217,6 +217,70 @@ void SMELT_IMPL::smDrawVertArray(int prim,SMTEX texture,int blend,int _primcnt)
 	if(primBlend!=blend)setBlend(blend);
 	primcnt=primcnt;
 }
+void SMELT_IMPL::smDrawCustomIndexedVertices(smVertex* vb,WORD* ib,int vbc,int ibc,int blend,SMTEX texture)
+{
+	if(vertexArray)
+	{
+		batchOGL();
+		pOpenGLDevice->glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER,0);
+		pOpenGLDevice->glVertexPointer(3,GL_FLOAT,sizeof(smVertex),&vb[0].x);
+		pOpenGLDevice->glColorPointer(4,GL_UNSIGNED_BYTE,sizeof(smVertex),&vb[0].col);
+		pOpenGLDevice->glTexCoordPointer(2,GL_FLOAT,sizeof(smVertex),&vb[0].tx);
+
+		float twm=1.,thm=1.;
+		if(texture)
+		{
+			if(filtermode==TFLT_NEAREST)
+			{
+				pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+				pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+			}
+			if(filtermode==TFLT_LINEAR)
+			{
+				pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+				pOpenGLDevice->glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+			}
+			glTexture *ptex=(glTexture*)texture;
+			if(pOpenGLDevice->TextureTarget==GL_TEXTURE_RECTANGLE_ARB)
+			{twm=ptex->rw;thm=ptex->rh;}
+			else if(ptex->dw&&ptex->dh)
+			{
+				twm=(ptex->rw)/(float)(ptex->dw);
+				thm=(ptex->rh)/(float)(ptex->dh);
+			}
+		}
+		if(!tdmode)
+		{
+			float h=curTarget?curTarget->h:scrh;
+			for(int i=0;i<vbc;++i)
+			{
+				vertexArray[i].y=h-vertexArray[i].y;
+				vertexArray[i].z=-vertexArray[i].z;
+			}
+		}
+		for(int i=0;i<vbc;++i)
+		{
+			vb[i].tx*=twm;
+			vb[i].ty=(1.-vb[i].ty)*thm;
+			DWORD color=vb[i].col;
+			BYTE *col=(BYTE*)&vb[i].col;
+			BYTE a=((color>>24)&0xFF);
+			BYTE r=((color>>16)&0xFF);
+			BYTE g=((color>> 8)&0xFF);
+			BYTE b=((color>> 0)&0xFF);
+			col[0]=r;col[1]=g;
+			col[2]=b;col[3]=a;
+		}
+		if(texture!=primTex)bindTexture((glTexture*)texture);
+		if(blend!=primBlend)setBlend(blend);
+		pOpenGLDevice->glDrawElements(GL_TRIANGLES,ibc,GL_UNSIGNED_SHORT,ib);
+
+		pOpenGLDevice->glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER,IndexBufferObject);
+		pOpenGLDevice->glVertexPointer(3,GL_FLOAT,sizeof(smVertex),&vertexBuf[0].x);
+		pOpenGLDevice->glColorPointer(4,GL_UNSIGNED_BYTE,sizeof(smVertex),&vertexBuf[0].col);
+		pOpenGLDevice->glTexCoordPointer(2,GL_FLOAT,sizeof(smVertex),&vertexBuf[0].tx);
+	}
+}
 SMTRG SMELT_IMPL::smTargetCreate(int w,int h)
 {
 	bool ok=false;
@@ -683,8 +747,8 @@ void SMELT_IMPL::batchOGL(bool endScene)
 				pOpenGLDevice->glDrawArrays(GL_TRIANGLES,0,3*primcnt);
 			break;
 			case PRIM_QUADS:
-				pOpenGLDevice->glDrawElements(GL_TRIANGLES,6*primcnt,GL_UNSIGNED_SHORT,indexBuf);
-				if(false)
+				pOpenGLDevice->glDrawElements(GL_TRIANGLES,6*primcnt,GL_UNSIGNED_SHORT,pOpenGLDevice->have_GL_ARB_vertex_buffer_object?0:indexBuf);
+#if 0
 				for (int i=0;i<primcnt*6;i+=3)
 				{
 					printf("idxbuf:%d\n",indexBuf[i]);
@@ -695,6 +759,7 @@ void SMELT_IMPL::batchOGL(bool endScene)
 					printf("#%d: ",indexBuf[i+2]);printVertex(vertexBuf[indexBuf[i+2]]);
 #undef printVertex
 				}
+#endif
 			break;
 		}
 		primcnt=0;
@@ -905,7 +970,6 @@ bool SMELT_IMPL::confOGL()
 		pOpenGLDevice->glGenBuffersARB(1,&IndexBufferObject);
 		pOpenGLDevice->glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER,IndexBufferObject);
 		pOpenGLDevice->glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER,sizeof(GLushort)*((VERTEX_BUFFER_SIZE*6)/4),indexBuf,GL_STATIC_DRAW);
-		delete[] indexBuf;indexBuf=NULL;
 	}
 	pOpenGLDevice->glVertexPointer(3,GL_FLOAT,sizeof(smVertex),&vertexBuf[0].x);
 	pOpenGLDevice->glColorPointer(4,GL_UNSIGNED_BYTE,sizeof(smVertex),&vertexBuf[0].col);
