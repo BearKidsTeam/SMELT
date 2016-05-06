@@ -355,7 +355,7 @@ public:
 	virtual void sm3DCamera6f2v(float *pos,float *rot)=0;
 	virtual void sm2DCamera5f3v(float *pos,float *dpos,float *rot)=0;
 	virtual void smMultViewMatrix(float *mat)=0;
-	virtual void smClrscr(DWORD color)=0;
+	virtual void smClrscr(DWORD color,bool clearcol=true,bool cleardep=true)=0;
 	virtual void smRenderLinefd(float x1,float y1,float z1,float x2,float y2,float z2,DWORD color)=0;
 	virtual void smRenderLinefvd(float *p1,float *p2,DWORD color)=0;
 	virtual void smRenderTriangle(smTriangle *t)=0;
@@ -364,7 +364,7 @@ public:
 	virtual void smDrawVertArray(int prim,SMTEX texture,int blend,int _primcnt)=0;
 	virtual void smDrawCustomIndexedVertices(smVertex* vb,WORD* ib,int vbc,int ibc,int blend,SMTEX texture)=0;
 
-	virtual SMTRG smTargetCreate(int w,int h)=0;
+	virtual SMTRG smTargetCreate(int w,int h,int ms=0)=0;
 	virtual SMTEX smTargetTexture(SMTRG targ)=0;
 	virtual void smTargetFree(SMTRG targ)=0;
 

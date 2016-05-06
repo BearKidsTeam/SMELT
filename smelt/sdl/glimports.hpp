@@ -49,6 +49,9 @@ GL_PROC(GL_EXT_framebuffer_object,glCheckFramebufferStatusEXT,,GLenum,(GLenum))
 GL_PROC(GL_EXT_framebuffer_object,glFramebufferRenderbufferEXT,,void,(GLenum, GLenum, GLenum, GLuint))
 GL_PROC(GL_EXT_framebuffer_object,glFramebufferTexture2DEXT,,void,(GLenum, GLenum, GLenum, GLuint, GLint))
 
+GL_PROC(GL_EXT_framebuffer_multisample,glRenderbufferStorageMultisampleEXT,,void,(GLenum, GLsizei, GLenum, GLsizei, GLsizei))
+GL_PROC(GL_EXT_framebuffer_blit,glBlitFramebufferEXT,,void,(GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLbitfield, GLenum))
+
 GL_PROC(GL_ARB_vertex_buffer_object,glBindBufferARB,,void,(GLenum, GLuint))
 GL_PROC(GL_ARB_vertex_buffer_object,glDeleteBuffersARB,,void,(GLsizei, const GLuint *))
 GL_PROC(GL_ARB_vertex_buffer_object,glGenBuffersARB,,void,(GLsizei, GLuint *))

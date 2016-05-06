@@ -56,15 +56,17 @@ public:
 	bool have_GL_EXT_framebuffer_object;
 	bool have_GL_EXT_texture_compression_s3tc;
 	bool have_GL_ARB_vertex_buffer_object;
+	bool have_GL_EXT_framebuffer_multisample;
+	bool have_GL_EXT_framebuffer_blit;
 };
 
 struct glTexture;
 class TRenderTargetList
 {
 public:
-	int w,h;
+	int w,h,ms;
 	SMTEX tex;
-	GLuint depth,frame;
+	GLuint depth,frame,colorms,sframe,sdepth,scolor;
 	TRenderTargetList *next;
 };
 class TTextureList
@@ -147,7 +149,7 @@ public:
 	virtual void sm3DCamera6f2v(float *pos,float *rot);
 	virtual void sm2DCamera5f3v(float *pos,float *dpos,float *rot);
 	virtual void smMultViewMatrix(float *mat);
-	virtual void smClrscr(DWORD color);
+	virtual void smClrscr(DWORD color,bool clearcol=true,bool cleardep=true);
 	virtual void smRenderLinefd(float x1,float y1,float z1,float x2,float y2,float z2,DWORD color);
 	virtual void smRenderLinefvd(float *p1,float *p2,DWORD color);
 	virtual void smRenderTriangle(smTriangle *t);
@@ -156,7 +158,7 @@ public:
 	virtual void smDrawVertArray(int prim,SMTEX texture,int blend,int _primcnt);
 	virtual void smDrawCustomIndexedVertices(smVertex* vb,WORD* ib,int vbc,int ibc,int blend,SMTEX texture);
 
-	virtual SMTRG smTargetCreate(int w,int h);
+	virtual SMTRG smTargetCreate(int w,int h,int ms=0);
 	virtual SMTEX smTargetTexture(SMTRG targ);
 	virtual void smTargetFree(SMTRG targ);
 
@@ -214,7 +216,7 @@ public:
 	void batchOGL(bool endScene=false);
 	void configTexture(glTexture *t,int w,int h,DWORD *px,bool compress=true);
 	void bindTexture(glTexture *t);
-	bool buildTarget(TRenderTargetList *pTarget,GLuint texid,int w,int h);
+	bool buildTarget(TRenderTargetList *pTarget,GLuint texid,int w,int h,int ms);
 	SMTEX buildTexture(int w,int h,DWORD *px);
 	void setBlend(int blend);
 	void configProjectionMatrix2D(int w,int h);
