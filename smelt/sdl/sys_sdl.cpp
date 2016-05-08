@@ -144,7 +144,7 @@ void SMELT_IMPL::smFinale()
 {
 	smLog("%s:" SLINE ": Cleaning up...\n",SYS_SDL_SRCFN);
 	clearQueue();finiOAL();finiOGL();
-	SDL_Quit();hwnd=0;
+	SDL_GL_UnloadLibrary();SDL_Quit();hwnd=0;
 }
 
 void SMELT_IMPL::smMainLoop()
