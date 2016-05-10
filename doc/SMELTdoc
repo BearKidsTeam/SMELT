@@ -257,6 +257,10 @@ Gets mouse position (within the window).
 void smSetMouse2f(float x,float y) [core/input]
 Sets mouse position (within the window).
 
+void smSetMouseGrab(bool enabled) [core/input]
+Enables or disables mouse grabbing.
+Useful for 3D camera control handling.
+
 int smGetWheel() [core/input]
 Gets mouse wheel motion since the last frame.
 
@@ -326,9 +330,11 @@ here, for example.
 The matrix the same as the matrix defined in smMatrix, but stored in float.
 (That's fairly stupid...)
 
-void smClrscr(DWORD color) [core/GFX/Rendering]
+void smClrscr(DWORD color,bool clearcol=true,bool cleardep=true) [core/GFX/Rendering]
 Clears the screen/rendering target with color.
-Alpha channel is not applicable.
+Alpha channel is not applicable to the back buffer.
+Depth buffer will only be cleared if cleardep is set to true.
+The same applies to the color buffer.
 
 void smRenderLinefd(float x1,float y1,float z1,float x2,float y2,float z2,DWORD
 color) [core/GFX/Rendering]
@@ -354,12 +360,14 @@ void smDrawVertArray(int prim,SMTEX texture,int blend,int _primcnt)
 [core/GFX/Rendering]
 Draws the vertex array modified by advanced batching.
 
-SMTRG smTargetCreate(int w,int h) [core/GFX]
-Creates a rendering target (sized w*h).
+SMTRG smTargetCreate(int w,int h,int ms=0) [core/GFX]
+Creates a rendering target (sized w*h) with multisampling level ms.
 Modern OpenGL supports non-power-of-two targets, however some of the D3D9
 hardwares doesn't.
 The target will be automatically resized, larger than the requested size, if
-it is not supported.
+the given size is not supported.
+Multisampling is disabled if ms=0. If multisampling is not supported, it
+will be disabled automatically.
 
 SMTEX smTargetTexture(SMTRG targ) [core/GFX]
 Gets the texture of the rendering target.
@@ -610,6 +618,7 @@ Public members of smEntity2D:
  Sets the centre of the entity. The centre is used as the rotation centre.
  When rendered, the centre is used to position the entity.
 
+//There's a pending overhaul of smEntity3D. Please ignore the section below.
 smEntity3D is almost the same as smEntity2D, except the lack of setZ function
 and some difference in the rendering methods. Further more, smEntity3D always
 writes to the Z buffer when rendered.
