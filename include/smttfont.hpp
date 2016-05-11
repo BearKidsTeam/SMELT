@@ -33,7 +33,7 @@ public:
 	float h(){return (float)_h;}
 	void free();
 	bool setChar(wchar_t c,FT_Face ttface);
-	void render(float x,float y,DWORD col);
+	void render(float x,float y,float z,DWORD col);
 };
 
 class smTTFont
@@ -52,7 +52,7 @@ public:
 	float getWidth(){return w;}
 	float getHeight(){return h;}
 	void updateString(const wchar_t *format,...);
-	void render(float x,float y,DWORD col,int align);
+	void render(float x,float y,float z,DWORD col,int align);
 	DWORD getCacheSize();
 	void clearCache();
 };

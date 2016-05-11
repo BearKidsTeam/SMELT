@@ -43,9 +43,9 @@ bool smTTChar::setChar(wchar_t c,FT_Face ttface)
 	quad.v[2].tx=1;quad.v[2].ty=1;quad.v[3].tx=0;quad.v[3].ty=1;
 	return true;
 }
-void smTTChar::render(float x,float y,DWORD col)
+void smTTChar::render(float x,float y,float z,DWORD col)
 {
-	for(int i=0;i<4;++i)quad.v[i].col=col,quad.v[i].z=.5;
+	for(int i=0;i<4;++i)quad.v[i].col=col,quad.v[i].z=z;
 	quad.v[0].x=x+xofs;quad.v[0].y=y-rh+yofs;
 	quad.v[1].x=x+rw+xofs;quad.v[1].y=y-rh+yofs;
 	quad.v[2].x=x+rw+xofs;quad.v[2].y=y+yofs;
@@ -97,7 +97,7 @@ void smTTFont::updateString(const wchar_t *format,...)
 	}
 	h+=lh;
 }
-void smTTFont::render(float x,float y,DWORD col,int align)
+void smTTFont::render(float x,float y,float z,DWORD col,int align)
 {
 	float curx,cury,lh;
 	if(align==ALIGN_LEFT)
@@ -109,7 +109,7 @@ void smTTFont::render(float x,float y,DWORD col,int align)
 			{
 				if(chars.find(buf[i])!=chars.end())
 				{
-					chars[buf[i]].render(curx,cury,col);
+					chars[buf[i]].render(curx,cury,z,col);
 					curx+=chars[buf[i]].w();
 					lh=chars[buf[i]].h()>lh?chars[buf[i]].h():lh;
 				}
@@ -126,7 +126,7 @@ void smTTFont::render(float x,float y,DWORD col,int align)
 			{
 				if(chars.find(buf[i])!=chars.end())
 				{
-					chars[buf[i]].render(curx,cury,col);
+					chars[buf[i]].render(curx,cury,z,col);
 					curx-=chars[buf[i]].w();
 					lh=chars[buf[i]].h()>lh?chars[buf[i]].h():lh;
 				}
