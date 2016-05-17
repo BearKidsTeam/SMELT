@@ -350,7 +350,7 @@ public:
 	virtual bool smGetInpEvent(smInpEvent *e)=0;
 
 	virtual bool smRenderBegin2D(bool ztest=0,SMTRG trg=0)=0;
-	virtual bool smRenderBegin3D(float fov,SMTRG trg=0)=0;
+	virtual bool smRenderBegin3D(float fov,bool ztest=0,SMTRG trg=0)=0;
 	virtual bool smRenderEnd()=0;
 	virtual void sm3DCamera6f2v(float *pos,float *rot)=0;
 	virtual void sm2DCamera5f3v(float *pos,float *dpos,float *rot)=0;

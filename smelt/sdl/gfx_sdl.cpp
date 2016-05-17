@@ -47,7 +47,7 @@ bool SMELT_IMPL::smRenderBegin2D(bool ztest,SMTRG trg)
 	vertexArray=vertexBuf;
 	return true;
 }
-bool SMELT_IMPL::smRenderBegin3D(float fov,SMTRG trg)
+bool SMELT_IMPL::smRenderBegin3D(float fov,bool ztest,SMTRG trg)
 {
 	TRenderTargetList *targ=(TRenderTargetList*)trg;
 	if(vertexArray)
@@ -55,8 +55,8 @@ bool SMELT_IMPL::smRenderBegin3D(float fov,SMTRG trg)
 	if(pOpenGLDevice->have_GL_EXT_framebuffer_object)
 	pOpenGLDevice->glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,(targ)?targ->frame:0);
 	pOpenGLDevice->glDepthFunc(GL_LESS);
-	pOpenGLDevice->glEnable(GL_DEPTH_TEST);
-	zbufenabled=true;
+	ztest?pOpenGLDevice->glEnable(GL_DEPTH_TEST):pOpenGLDevice->glDisable(GL_DEPTH_TEST);
+	zbufenabled=ztest;
 	if(targ)
 	{
 		pOpenGLDevice->glScissor(0,0,targ->w,targ->h);

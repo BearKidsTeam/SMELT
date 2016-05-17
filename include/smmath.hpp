@@ -54,7 +54,7 @@ class smvec3d
 public:
 	double x,y,z;
 	smvec3d(double _x,double _y,double _z){x=_x;y=_y;z=_z;}
-	smvec3d(smvec2d a){x=a.x;y=a.y;z=.0;}
+	smvec3d(smvec2d a,double _z=.0){x=a.x;y=a.y;z=_z;}
 	smvec3d(){x=y=z=.0;}
 	double l(){return sqrt(sqr(x)+sqr(y)+sqr(z));}
 	void normalize(){double L=l();if(L<EPS)return;x/=L;y/=L;z/=L;}
@@ -66,6 +66,26 @@ public:
 	friend smvec3d operator *(double a,smvec3d b){return smvec3d(a*b.x,a*b.y,a*b.z);}
 	friend smvec3d operator *(smvec3d a,double b){return smvec3d(b*a.x,b*a.y,b*a.z);}
 	friend double operator ^(smvec3d a,smvec3d b){return (a|b)/a.l()/b.l();}
+};
+
+class smvec4d
+{
+public:
+	double x,y,z,w;
+	smvec4d(double _x,double _y,double _z,double _w){x=_x;y=_y;z=_z;w=_w;}
+	smvec4d(smvec3d a,double _w=.0){x=a.x;y=a.y;z=a.z;w=_w;}
+	smvec4d(){x=y=z=w=.0;}
+	double l(){return sqrt(sqr(x)+sqr(y)+sqr(z)+sqr(w));}
+	void normalize(){double L=l();if(L<EPS)return;x/=L;y/=L;z/=L;w/=L;}
+	smvec4d getNormalized(){double L=l();if(L<EPS)return smvec4d(0,0,0,0);return smvec4d(x/L,y/L,z/L,w/L);}
+	friend smvec4d operator -(smvec4d a,smvec4d b){return smvec4d(a.x-b.x,a.y-b.y,a.z-b.z,a.w-b.w);}
+	friend smvec4d operator +(smvec4d a,smvec4d b){return smvec4d(a.x+b.x,a.y+b.y,a.z+b.z,a.w+b.w);}
+	friend double operator |(smvec4d a,smvec4d b){return a.x*b.x+a.y*b.y+a.z*b.z+a.w*b.w;}
+	//Note: this doesn't do a real cross product.
+	friend smvec4d operator *(smvec4d a,smvec4d b){return smvec4d(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x,1);}
+	friend smvec4d operator *(double a,smvec4d b){return smvec4d(a*b.x,a*b.y,a*b.z,a*b.w);}
+	friend smvec4d operator *(smvec4d a,double b){return smvec4d(b*a.x,b*a.y,b*a.z,b*a.w);}
+	friend double operator ^(smvec4d a,smvec4d b){return (a|b)/a.l()/b.l();}
 };
 
 class smMatrix
@@ -104,15 +124,14 @@ public:
 		tmp[3][3]=1;
 		*this=*this*tmp;
 	}
-	void lookat(double *eye,double *at,double *up)
+	void lookat(smvec3d eye,smvec3d at,smvec3d up)
 	{
-		smvec3d f=smvec3d(at[0],at[1],at[2])-smvec3d(eye[0],eye[1],eye[2]);f.normalize();
-		smvec3d UP=smvec3d(up[0],up[1],up[2]);UP.normalize();
-		smvec3d s=f*UP;smvec3d u=s.getNormalized()*f;
-		*this[0][0]= s.x;*this[1][0]= s.y;*this[2][0]= s.z;*this[3][0]=0;
-		*this[0][1]= u.x;*this[1][1]= u.y;*this[2][1]= u.z;*this[3][1]=0;
-		*this[0][2]=-f.x;*this[1][2]=-f.y;*this[2][2]=-f.z;*this[3][2]=0;
-		*this[0][3]=   0;*this[1][3]=   0;*this[2][3]=   0;*this[3][3]=1;
+		smvec3d f=at-eye;f.normalize();up.normalize();
+		smvec3d s=f*up;smvec3d u=s.getNormalized()*f;
+		m[0]= s.x;m[4]= s.y;m[ 8]= s.z;m[12]=0;
+		m[1]= u.x;m[5]= u.y;m[ 9]= u.z;m[13]=0;
+		m[2]=-f.x;m[6]=-f.y;m[10]=-f.z;m[14]=0;
+		m[3]=   0;m[7]=   0;m[11]=   0;m[15]=1;
 	}
 	friend smMatrix operator *(smMatrix a,smMatrix b)
 	{
@@ -128,6 +147,13 @@ public:
 		return smvec3d(a[0][0]*b.x+a[1][0]*b.y+a[2][0]*b.z,
 		               a[0][1]*b.x+a[1][1]*b.y+a[2][1]*b.z,
 		               a[0][2]*b.x+a[1][2]*b.y+a[2][2]*b.z);
+	}
+	friend smvec4d operator *(smMatrix a,smvec4d b)
+	{
+		return smvec4d(a[0][0]*b.x+a[1][0]*b.y+a[2][0]*b.z+a[3][0]*b.w,
+		               a[0][1]*b.x+a[1][1]*b.y+a[2][1]*b.z+a[3][1]*b.w,
+		               a[0][2]*b.x+a[1][2]*b.y+a[2][2]*b.z+a[3][2]*b.w,
+		               a[0][3]*b.x+a[1][3]*b.y+a[2][3]*b.z+a[3][3]*b.w);
 	}
 };
 #endif

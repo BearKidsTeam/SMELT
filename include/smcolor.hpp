@@ -27,7 +27,7 @@ public:
 	friend smColorRGBA operator *(smColorRGBA a,float b){return smColorRGBA(b*a.r,b*a.g,b*a.b,b*a.a);}
 	friend smColorRGBA operator /(smColorRGBA a,float b){return smColorRGBA(a.r/b,a.g/b,a.b/b,a.a/b);}
 	void setHWColor(DWORD col){a=GETA(col)/255.;r=GETR(col)/255.;g=GETG(col)/255.;b=GETB(col)/255.;}
-	DWORD getHWColor(){clamp();return RGBA(r,g,b,a);}
+	DWORD getHWColor(){clamp();return RGBA(r*255.,g*255.,b*255.,a*255.);}
 };
 class smColorHSVA
 {

@@ -144,7 +144,7 @@ public:
 	virtual bool smGetInpEvent(smInpEvent *e);
 
 	virtual bool smRenderBegin2D(bool ztest=0,SMTRG trg=0);
-	virtual bool smRenderBegin3D(float fov,SMTRG trg=0);
+	virtual bool smRenderBegin3D(float fov,bool ztest=0,SMTRG trg=0);
 	virtual bool smRenderEnd();
 	virtual void sm3DCamera6f2v(float *pos,float *rot);
 	virtual void sm2DCamera5f3v(float *pos,float *dpos,float *rot);
