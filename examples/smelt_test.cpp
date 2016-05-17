@@ -93,7 +93,7 @@ bool doingNothing()
 	//render a test string with the bitmap font.
 	fonttest.render(0,0,0,ALIGN_LEFT,NULL,"bitmap font test");
 	//render a test string with the truetype font.
-	ttftest.render(0,500,0xFFFFFFFF,ALIGN_LEFT);
+	ttftest.render(0,500,0.5,0xFFFFFFFF,ALIGN_LEFT);
 	//render the content of the previously used rendering
 	//target to the screen.
 	quad.tex=sm->smTargetTexture(testtrg);
