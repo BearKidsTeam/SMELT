@@ -29,13 +29,18 @@
 #ifndef SMELT_H
 #define SMELT_H
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include <stddef.h>
 #include <stdint.h>
 
 #define SMELT_APILEVEL 3
 
 //Primitive data types
+#ifndef WIN32 //windows.h has this inside
 typedef uint32_t DWORD;
+#endif
 typedef uint16_t WORD;
 typedef uint8_t BYTE;
 

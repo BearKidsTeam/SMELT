@@ -18,7 +18,7 @@ with little modification :)
 
 Building dependencies on debian-based systems:
 
->libfreetype6-dev libopenal-dev libsdl2-dev libpng12-dev
+>libfreetype6-dev libopenal-dev libsdl2-dev libpng-dev
 >libjpeg62-turbo-dev libvorbis-dev libogg-dev
 
 To build a module, just run make in the corresponding folder.
