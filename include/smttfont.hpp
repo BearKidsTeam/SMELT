@@ -33,7 +33,7 @@ public:
 	float h(){return (float)_h;}
 	void free();
 	bool setChar(wchar_t c,FT_Face ttface);
-	void render(float x,float y,float z,DWORD col,float scalex,float scaley);
+	void render(float x,float y,float z,DWORD col,float scalex,float scaley,bool rtl);
 };
 
 class smTTFont

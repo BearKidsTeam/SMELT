@@ -43,14 +43,24 @@ bool smTTChar::setChar(wchar_t c,FT_Face ttface)
 	quad.v[2].tx=1;quad.v[2].ty=1;quad.v[3].tx=0;quad.v[3].ty=1;
 	return true;
 }
-void smTTChar::render(float x,float y,float z,DWORD col,float scalex,float scaley)
+void smTTChar::render(float x,float y,float z,DWORD col,float scalex,float scaley,bool rtl)
 {
 	for(int i=0;i<4;++i)quad.v[i].col=col,quad.v[i].z=z;
-	quad.v[0].x=x+xofs*scalex;quad.v[0].y=y+(yofs-rh)*scaley;
-	quad.v[1].x=x+(rw+xofs)*scalex;quad.v[1].y=y+(yofs-rh)*scaley;
-	quad.v[2].x=x+(rw+xofs)*scalex;quad.v[2].y=y+yofs*scaley;
-	quad.v[3].x=x+xofs*scalex;quad.v[3].y=y+yofs*scaley;
-	sm->smRenderQuad(&quad);
+	if(!rtl)
+	{
+		quad.v[0].x=x+xofs*scalex;quad.v[0].y=y+(yofs-rh)*scaley;
+		quad.v[1].x=x+(rw+xofs)*scalex;quad.v[1].y=y+(yofs-rh)*scaley;
+		quad.v[2].x=x+(rw+xofs)*scalex;quad.v[2].y=y+yofs*scaley;
+		quad.v[3].x=x+xofs*scalex;quad.v[3].y=y+yofs*scaley;
+	}
+	else
+	{
+		quad.v[0].x=x+(-rw+xofs)*scalex;quad.v[0].y=y+(yofs-rh)*scaley;
+		quad.v[1].x=x+xofs*scalex;quad.v[1].y=y+(yofs-rh)*scaley;
+		quad.v[2].x=x+xofs*scalex;quad.v[2].y=y+yofs*scaley;
+		quad.v[3].x=x+(-rw+xofs)*scalex;quad.v[3].y=y+yofs*scaley;
+	}
+sm->smRenderQuad(&quad);
 }
 
 bool smTTFont::loadTTF(const char* path,int pt)
@@ -109,7 +119,7 @@ void smTTFont::render(float x,float y,float z,DWORD col,int align,float scalex,f
 			{
 				if(chars.find(buf[i])!=chars.end())
 				{
-					chars[buf[i]].render(curx,cury,z,col,scalex,scaley);
+					chars[buf[i]].render(curx,cury,z,col,scalex,scaley,false);
 					curx+=chars[buf[i]].w()*scalex;
 					lh=chars[buf[i]].h()>lh?chars[buf[i]].h():lh;
 				}
@@ -126,7 +136,7 @@ void smTTFont::render(float x,float y,float z,DWORD col,int align,float scalex,f
 			{
 				if(chars.find(buf[i])!=chars.end())
 				{
-					chars[buf[i]].render(curx,cury,z,col,scalex,scaley);
+					chars[buf[i]].render(curx,cury,z,col,scalex,scaley,true);
 					curx-=chars[buf[i]].w()*scalex;
 					lh=chars[buf[i]].h()>lh?chars[buf[i]].h():lh;
 				}
