@@ -11,8 +11,11 @@
 #include "smelt_internal.hpp"
 
 static const char* SFX_SDL_SRCFN="smelt/sdl/sfx_sdl.cpp";
+#ifndef ENABLE_DUMB
+#ifdef ENABLE_OGG_SUPPORT
 struct oggdata{const BYTE *data;DWORD size,pos;};
 static void* readVorbis(const BYTE *data,const DWORD size, ALsizei *decomp_size,ALenum *fmt,ALsizei *freq);
+#endif
 static void* readRiffWv(const BYTE *data,const DWORD size, ALsizei *decomp_size,ALenum *fmt,ALsizei *freq);
 SMSFX SMELT_IMPL::smSFXLoad(const char *path)
 {
@@ -33,16 +36,20 @@ SMSFX SMELT_IMPL::smSFXLoadFromMemory(const char *ptr,DWORD size)
 {
 	if(pOpenALDevice&&!mute)
 	{
+#ifdef ENABLE_OGG_SUPPORT
 		bool isOgg=size>4&&ptr[0]=='O'&&ptr[1]=='g'&&ptr[2]=='g'&&ptr[3]=='S';
+#endif
 		void *decompdata=NULL,*decomp=NULL;
 		ALsizei decompsize=0,freq=0;
 		ALenum fmt=AL_FORMAT_STEREO16;
 		decompdata=readRiffWv((const BYTE*)ptr,size,&decompsize,&fmt,&freq);
+#ifdef ENABLE_OGG_SUPPORT
 		if(!decompdata)
 		{
 			if(!isOgg)return 0;
 			else decompdata=readVorbis((const BYTE*)ptr,size,&decompsize,&fmt,&freq);
 		}
+#endif
 		if(!decompdata)return 0;
 		decomp=decompdata;
 		ALuint buff=0;alGenBuffers(1,&buff);
@@ -205,6 +212,7 @@ void SMELT_IMPL::smChannelSetPosd(SMCHN chn,int pos)
 	if(pOpenALDevice)alSourcei((ALuint)chn,AL_SAMPLE_OFFSET,(ALint)pos);
 }
 
+#ifdef ENABLE_OGG_SUPPORT
 static size_t oggRead(void *ptr,size_t size,size_t nmemb,void *ds)
 {
 	oggdata *data=(oggdata*)ds;
@@ -276,6 +284,7 @@ static void* readVorbis(const BYTE *data,const DWORD size, ALsizei *decomp_size,
 	}
 	return NULL;
 }
+#endif
 static void* readRiffWv(const BYTE *data,const DWORD size, ALsizei *decomp_size,ALenum *fmt,ALsizei *freq)
 {
 	if(data[0x0]!='R'||data[0x1]!='I'||data[0x2]!='F'||data[0x3]!='F')return NULL;
@@ -354,3 +363,6 @@ void SMELT_IMPL::finiOAL()
 		alcCloseDevice(dev);pOpenALDevice=NULL;
 	}
 }
+#else
+#include "sfx_dumb.cpp"
+#endif //ifndef ENABLE_DUMB

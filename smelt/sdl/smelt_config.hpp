@@ -18,3 +18,13 @@
  * Client-side vertex buffer size.
  */
 #define VERTEX_BUFFER_SIZE 4000
+
+/*
+ * Uncomment this to build a "dumb" version with no audio routines.
+ */
+//#define ENABLE_DUMB
+
+/*
+ * Undefine this to disable ogg support.
+ */
+#define ENABLE_OGG_SUPPORT

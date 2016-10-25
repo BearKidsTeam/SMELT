@@ -21,11 +21,15 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <SDL2/SDL.h>
+#ifndef ENABLE_DUMB
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alext.h>
+#ifdef ENABLE_OGG_SUPPORT
 #include <ogg/ogg.h>
 #include <vorbis/vorbisfile.h>
+#endif
+#endif
 #ifdef WIN32
 #include <windows.h>
 #include <intrin.h>
@@ -225,12 +229,14 @@ public:
 	DWORD* decodeImage(BYTE *data,const char *fn,DWORD size,int &w,int &h);
 
 	void *pOpenALDevice;
+	bool mute,lpp;
 	bool initOAL();
 	void finiOAL();
-	bool mute,lpp;
+#ifndef ENABLE_DUMB
 	int scnt;
 	ALuint src[SRC_MAX];
 	ALuint getSource();
+#endif
 
 	int posz,lkey;
 	float posx,posy;

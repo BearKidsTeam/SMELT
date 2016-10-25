@@ -6,13 +6,9 @@
  * This dumb implementation has everything stubbed, useful if you don't
  * use the audio routines here.
  *
- * WARNING: This library is in development and interfaces would be very
- * unstable.
+ * WARNING: This file is not intended to be used on its own!
  *
  */
-#include "smelt_internal.hpp"
-
-static const char* SFX_SDL_SRCFN="smelt/sdl/sfx_dumb.cpp";
 
 SMSFX SMELT_IMPL::smSFXLoad(const char *path)
 {return 0;}
@@ -57,18 +53,11 @@ int SMELT_IMPL::smChannelGetPosd(SMCHN chn)
 void SMELT_IMPL::smChannelSetPosd(SMCHN chn,int pos)
 {}
 
-ALuint SMELT_IMPL::getSource()
-{return 0;}
 bool SMELT_IMPL::initOAL()
 {
 	smLog("%s:" SLINE ": I'm dumb!\n",SFX_SDL_SRCFN);
-	pOpenALDevice=(void*)1;
 	return true;
 }
 void SMELT_IMPL::finiOAL()
 {
-	if(pOpenALDevice)
-	{
-		pOpenALDevice=NULL;
-	}
 }

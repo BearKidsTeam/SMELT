@@ -132,6 +132,7 @@ bool SMELT_IMPL::smInit()
 		if(!pSM->Active)pSM->focusChange(true);
 	}
 	SDL_ShowCursor(hideMouse?SDL_DISABLE:SDL_ENABLE);
+	SDL_EnableScreenSaver();
 	initInput();
 	if(!initOGL()){smFinale();return false;}
 	if(!initOAL()){smFinale();return false;}
