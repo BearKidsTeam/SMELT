@@ -20,6 +20,7 @@
 #include <cstdarg>
 #include <dirent.h>
 #include <unistd.h>
+#define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #ifndef ENABLE_DUMB
@@ -186,12 +187,12 @@ public:
 	char logFile[256];
 	int limfps;
 	bool hideMouse,noSuspend;
-	GLuint IndexBufferObject;
 
 	TOpenGLDevice *pOpenGLDevice;
 	smVertex *vertexArray;
 	smVertex *vertexBuf;
 	GLushort *indexBuf;
+	GLuint IndexBufferObject;
 	TRenderTargetList *targets;
 	TRenderTargetList *curTarget;
 	TTextureList *textures;

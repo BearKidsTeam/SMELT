@@ -73,7 +73,7 @@ bool SMELT_IMPL::smInit()
 		else if(i==0x80000004)
 		memcpy(cpuName+32, CPUInfo, sizeof(CPUInfo));
 	}
-	while(*cpuName=' ')++cpuName;
+	while(*cpuName==' ')++cpuName;
 	smLog("%s:" SLINE ": CPU: %s\n", SYS_GLFW_SRCFN,cpuName);
 	free(loced);
 
@@ -106,8 +106,7 @@ bool SMELT_IMPL::smInit()
 		return false;
 	}
 	GLFWmonitor *moninfo=glfwGetPrimaryMonitor();
-	dispw=glfwGetVideoMode(moninfo)->width;
-	disph=glfwGetVideoMode(moninfo)->height;
+	glfwGetMonitorPhysicalSize(moninfo,&dispw,&disph);
 	smLog("%s:" SLINE ": Screen: %d x %d\n",SYS_GLFW_SRCFN,dispw,disph);
 	glfwWindowHint(GLFW_RED_BITS,8);
 	glfwWindowHint(GLFW_GREEN_BITS,8);

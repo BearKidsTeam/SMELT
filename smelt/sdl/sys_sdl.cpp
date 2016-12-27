@@ -62,7 +62,7 @@ bool SMELT_IMPL::smInit()
 		else if(i==0x80000004)
 		memcpy(cpuName+32, CPUInfo, sizeof(CPUInfo));
 	}
-	while(*cpuName=' ')++cpuName;
+	while(*cpuName==' ')++cpuName;
 	smLog("%s:" SLINE ": CPU: %s\n", SYS_SDL_SRCFN,cpuName);
 	free(loced);
 
@@ -132,7 +132,6 @@ bool SMELT_IMPL::smInit()
 		if(!pSM->Active)pSM->focusChange(true);
 	}
 	SDL_ShowCursor(hideMouse?SDL_DISABLE:SDL_ENABLE);
-	SDL_EnableScreenSaver();
 	initInput();
 	if(!initOGL()){smFinale();return false;}
 	if(!initOAL()){smFinale();return false;}
