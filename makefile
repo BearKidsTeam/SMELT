@@ -1,7 +1,6 @@
 MAKE= make -C
 all: smelt
-smelt:
-	core extensions
+smelt: core extensions
 core:
 	$(MAKE) ./smelt/sdl/
 	$(MAKE) ./smelt/sdl/ dumb
