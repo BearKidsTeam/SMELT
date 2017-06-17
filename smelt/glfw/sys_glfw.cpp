@@ -62,7 +62,7 @@ bool SMELT_IMPL::smInit()
 	int CPUInfo[4]={-1};
 	__cpuid(CPUInfo,0x80000000);
 	unsigned int nExIds=CPUInfo[0];
-	char *cpuName,*loced;cpuName=calloc(0x40,sizeof(char));loced=cpuName;
+	char *cpuName,*loced;cpuName=(char*)calloc(0x40,sizeof(char));loced=cpuName;
 	for(unsigned int i=0x80000000;i<=nExIds;++i)
 	{
 		__cpuid(CPUInfo, i);
@@ -106,7 +106,8 @@ bool SMELT_IMPL::smInit()
 		return false;
 	}
 	GLFWmonitor *moninfo=glfwGetPrimaryMonitor();
-	glfwGetMonitorPhysicalSize(moninfo,&dispw,&disph);
+	dispw=glfwGetVideoMode(moninfo)->width;
+	disph=glfwGetVideoMode(moninfo)->height;
 	smLog("%s:" SLINE ": Screen: %d x %d\n",SYS_GLFW_SRCFN,dispw,disph);
 	glfwWindowHint(GLFW_RED_BITS,8);
 	glfwWindowHint(GLFW_GREEN_BITS,8);

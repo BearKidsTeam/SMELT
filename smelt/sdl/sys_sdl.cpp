@@ -51,7 +51,7 @@ bool SMELT_IMPL::smInit()
 	int CPUInfo[4]={-1};
 	__cpuid(CPUInfo,0x80000000);
 	unsigned int nExIds=CPUInfo[0];
-	char *cpuName,*loced;cpuName=calloc(0x40,sizeof(char));loced=cpuName;
+	char *cpuName,*loced;cpuName=(char*)calloc(0x40,sizeof(char));loced=cpuName;
 	for(unsigned int i=0x80000000;i<=nExIds;++i)
 	{
 		__cpuid(CPUInfo, i);

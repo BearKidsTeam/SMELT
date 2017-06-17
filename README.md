@@ -8,7 +8,7 @@ A ~~totally useless~~ reference is now in the doc folder.
 A D3D version will be put into construction _soon_.
 
 ## Building
-Building the SDL version of SMELT is now officially tested
+Building the SDL/GLFW version of SMELT is now officially tested
 on debian sid, debian jessie and Arch Linux.
 
 Theoretically the SDL version should work on Windows
@@ -19,7 +19,7 @@ Building dependencies on debian-based systems:
 >libfreetype6-dev libopenal-dev libsdl2-dev libpng-dev
 >libjpeg62-turbo-dev libvorbis-dev libogg-dev
 
-Now there's also an experimental port that uses GLFW instead of SDL2. 
+Now there's also an port that uses GLFW instead of SDL2. 
 Minor behavior differences exist between the two versions.
 
 Additional building dependencies for the GLFW version on a debian-base system:
@@ -27,6 +27,7 @@ Additional building dependencies for the GLFW version on a debian-base system:
 >libglfw3-dev libglew-dev
 
 To build a module, just run make in the corresponding folder.
+Please note that CxImage is also a module.
 
 The example must be built last.
 
@@ -58,5 +59,7 @@ comments in the file for details.
 ## TODOs:
 * Example code.
 * Better documentation.
+* Sane way to build.
+* OpenGL 3+/OpenGL ES version.
 * D3D version.
 * Better tools?

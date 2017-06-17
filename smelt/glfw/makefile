@@ -1,5 +1,5 @@
 CC= g++
-CXXFLAGS= -c -g -O2 -std=c++11 -Wall -I../include -D_LINUX -fPIC
+CXXFLAGS= -c -g -O2 -std=c++11 -Wall -I../../include -D_LINUX -fPIC
 TARGET= libsmelt.a
 
 all: objects-normal archive-normal

@@ -61,7 +61,7 @@ bool doingNothing()
 	if(d>0.37){sm->smSFXPlay(sfx);d=0;}
 
 	//We render the 3D scene to a render target.
-	sm->smRenderBegin3D(60,testtrg);
+	sm->smRenderBegin3D(60,true,testtrg);
 	//camera position and rotation.
 	static float pos[3]={0,0,600};
 	static float rot[3]={0,0,-30};
