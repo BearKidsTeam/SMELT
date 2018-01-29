@@ -1,4 +1,5 @@
 MAKE= make -B -C
+.PHONY: smelt core extensions
 all: smelt
 smelt: core extensions
 core:
