@@ -2,7 +2,7 @@
 /*
  * Simple MultimEdia LiTerator(SMELT)
  * by Chris Xiong 2015
- * Math header & implementation
+ * Math header & implementation for the core
  *
  * WARNING: This library is in development and interfaces would be very
  * unstable.
@@ -13,12 +13,10 @@
 #include <cmath>
 #include <cstddef>
 #define sqr(x) ((x)*(x))
-#define EPS 1e-8
+#define EPS 1e-6
 #ifndef PI
 #define PI 3.14159265358979323846f
 #endif
-template<class T>const T& min(const T& a,const T& b){return a<b?a:b;}
-template<class T>const T& max(const T& a,const T& b){return a>b?a:b;}
 
 class smMath
 {
@@ -31,67 +29,67 @@ public:
 class smvec2d
 {
 public:
-	double x,y;
-	smvec2d(double _x,double _y){x=_x;y=_y;}
+	float x,y;
+	smvec2d(float _x,float _y){x=_x;y=_y;}
 	smvec2d(){x=y=.0;}
-	double l(){return sqrt(sqr(x)+sqr(y));}
-	void normalize(){double L=l();if(L<EPS)return;x/=L;y/=L;}
-	smvec2d getNormalized(){double L=l();if(L<EPS)return smvec2d(0,0);return smvec2d(x/L,y/L);}
-	void swap(){double t=x;x=y;y=t;}
-	void rotate(double rad){double tx=x*cos(rad)+y*sin(rad),ty=y*cos(rad)-x*sin(rad);x=tx,y=ty;}
-	smvec2d getRotate(double rad){double tx=x*cos(rad)+y*sin(rad),ty=y*cos(rad)-x*sin(rad);return smvec2d(tx,ty);}
+	float l(){return sqrtf(sqr(x)+sqr(y));}
+	void normalize(){float L=l();if(L<EPS)return;x/=L;y/=L;}
+	smvec2d getNormalized(){float L=l();if(L<EPS)return smvec2d(0,0);return smvec2d(x/L,y/L);}
+	void swap(){float t=x;x=y;y=t;}
+	void rotate(float rad){float tx=x*cosf(rad)+y*sinf(rad),ty=y*cosf(rad)-x*sinf(rad);x=tx,y=ty;}
+	smvec2d getRotate(float rad){float tx=x*cosf(rad)+y*sinf(rad),ty=y*cosf(rad)-x*sinf(rad);return smvec2d(tx,ty);}
 	friend smvec2d operator -(smvec2d a,smvec2d b){return smvec2d(a.x-b.x,a.y-b.y);}
 	friend smvec2d operator +(smvec2d a,smvec2d b){return smvec2d(a.x+b.x,a.y+b.y);}
-	friend double operator |(smvec2d a,smvec2d b){return a.x*b.x+a.y*b.y;}
-	friend double operator *(smvec2d a,smvec2d b){return a.x*b.y-b.x*a.y;}
-	friend smvec2d operator *(double a,smvec2d b){return smvec2d(a*b.x,a*b.y);}
-	friend smvec2d operator *(smvec2d a,double b){return smvec2d(b*a.x,b*a.y);}
-	friend double operator ^(smvec2d a,smvec2d b){return (a|b)/a.l()/b.l();}
+	friend float operator |(smvec2d a,smvec2d b){return a.x*b.x+a.y*b.y;}
+	friend float operator *(smvec2d a,smvec2d b){return a.x*b.y-b.x*a.y;}
+	friend smvec2d operator *(float a,smvec2d b){return smvec2d(a*b.x,a*b.y);}
+	friend smvec2d operator *(smvec2d a,float b){return smvec2d(b*a.x,b*a.y);}
+	friend float operator ^(smvec2d a,smvec2d b){return (a|b)/a.l()/b.l();}
 };
 
 class smvec3d
 {
 public:
-	double x,y,z;
-	smvec3d(double _x,double _y,double _z){x=_x;y=_y;z=_z;}
-	smvec3d(smvec2d a,double _z=.0){x=a.x;y=a.y;z=_z;}
+	float x,y,z;
+	smvec3d(float _x,float _y,float _z){x=_x;y=_y;z=_z;}
+	smvec3d(smvec2d a,float _z=.0){x=a.x;y=a.y;z=_z;}
 	smvec3d(){x=y=z=.0;}
-	double l(){return sqrt(sqr(x)+sqr(y)+sqr(z));}
-	void normalize(){double L=l();if(L<EPS)return;x/=L;y/=L;z/=L;}
-	smvec3d getNormalized(){double L=l();if(L<EPS)return smvec3d(0,0,0);return smvec3d(x/L,y/L,z/L);}
+	float l(){return sqrtf(sqr(x)+sqr(y)+sqr(z));}
+	void normalize(){float L=l();if(L<EPS)return;x/=L;y/=L;z/=L;}
+	smvec3d getNormalized(){float L=l();if(L<EPS)return smvec3d(0,0,0);return smvec3d(x/L,y/L,z/L);}
 	friend smvec3d operator -(smvec3d a,smvec3d b){return smvec3d(a.x-b.x,a.y-b.y,a.z-b.z);}
 	friend smvec3d operator +(smvec3d a,smvec3d b){return smvec3d(a.x+b.x,a.y+b.y,a.z+b.z);}
-	friend double operator |(smvec3d a,smvec3d b){return a.x*b.x+a.y*b.y+a.z*b.z;}
+	friend float operator |(smvec3d a,smvec3d b){return a.x*b.x+a.y*b.y+a.z*b.z;}
 	friend smvec3d operator *(smvec3d a,smvec3d b){return smvec3d(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x);}
-	friend smvec3d operator *(double a,smvec3d b){return smvec3d(a*b.x,a*b.y,a*b.z);}
-	friend smvec3d operator *(smvec3d a,double b){return smvec3d(b*a.x,b*a.y,b*a.z);}
-	friend double operator ^(smvec3d a,smvec3d b){return (a|b)/a.l()/b.l();}
+	friend smvec3d operator *(float a,smvec3d b){return smvec3d(a*b.x,a*b.y,a*b.z);}
+	friend smvec3d operator *(smvec3d a,float b){return smvec3d(b*a.x,b*a.y,b*a.z);}
+	friend float operator ^(smvec3d a,smvec3d b){return (a|b)/a.l()/b.l();}
 };
 
 class smvec4d
 {
 public:
-	double x,y,z,w;
-	smvec4d(double _x,double _y,double _z,double _w){x=_x;y=_y;z=_z;w=_w;}
-	smvec4d(smvec3d a,double _w=.0){x=a.x;y=a.y;z=a.z;w=_w;}
+	float x,y,z,w;
+	smvec4d(float _x,float _y,float _z,float _w){x=_x;y=_y;z=_z;w=_w;}
+	smvec4d(smvec3d a,float _w=.0){x=a.x;y=a.y;z=a.z;w=_w;}
 	smvec4d(){x=y=z=w=.0;}
-	double l(){return sqrt(sqr(x)+sqr(y)+sqr(z)+sqr(w));}
-	void normalize(){double L=l();if(L<EPS)return;x/=L;y/=L;z/=L;w/=L;}
-	smvec4d getNormalized(){double L=l();if(L<EPS)return smvec4d(0,0,0,0);return smvec4d(x/L,y/L,z/L,w/L);}
+	float l(){return sqrt(sqr(x)+sqr(y)+sqr(z)+sqr(w));}
+	void normalize(){float L=l();if(L<EPS)return;x/=L;y/=L;z/=L;w/=L;}
+	smvec4d getNormalized(){float L=l();if(L<EPS)return smvec4d(0,0,0,0);return smvec4d(x/L,y/L,z/L,w/L);}
 	friend smvec4d operator -(smvec4d a,smvec4d b){return smvec4d(a.x-b.x,a.y-b.y,a.z-b.z,a.w-b.w);}
 	friend smvec4d operator +(smvec4d a,smvec4d b){return smvec4d(a.x+b.x,a.y+b.y,a.z+b.z,a.w+b.w);}
-	friend double operator |(smvec4d a,smvec4d b){return a.x*b.x+a.y*b.y+a.z*b.z+a.w*b.w;}
-	//Note: this doesn't do a real 4d cross product.
+	friend float operator |(smvec4d a,smvec4d b){return a.x*b.x+a.y*b.y+a.z*b.z+a.w*b.w;}
+	//Note: this doesn't do a real 4D cross product.
 	friend smvec4d operator *(smvec4d a,smvec4d b){return smvec4d(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x,1);}
-	friend smvec4d operator *(double a,smvec4d b){return smvec4d(a*b.x,a*b.y,a*b.z,a*b.w);}
-	friend smvec4d operator *(smvec4d a,double b){return smvec4d(b*a.x,b*a.y,b*a.z,b*a.w);}
-	friend double operator ^(smvec4d a,smvec4d b){return (a|b)/a.l()/b.l();}
+	friend smvec4d operator *(float a,smvec4d b){return smvec4d(a*b.x,a*b.y,a*b.z,a*b.w);}
+	friend smvec4d operator *(smvec4d a,float b){return smvec4d(b*a.x,b*a.y,b*a.z,b*a.w);}
+	friend float operator ^(smvec4d a,smvec4d b){return (a|b)/a.l()/b.l();}
 };
 
 class smMatrix
 {
 public:
-	double m[16];
+	float m[16];
 	/* sf  0  1  2  3
 	 * 0  00 04 08 12
 	 * 1  01 05 09 13
@@ -99,26 +97,27 @@ public:
 	 * 3  03 07 11 15
 	 */
 	smMatrix(){for(int i=0;i<16;++i)m[i]=.0;}
+	smMatrix(const float* _m){memcpy(m,_m,sizeof(m));}
 	smMatrix(const smMatrix &copy){for(int i=0;i<16;++i)m[i]=copy.m[i];}
-	double* operator [](int s){if(s>=0&&s<4)return m+s*4;else return NULL;}
+	float* operator [](int s){if(s>=0&&s<4)return m+s*4;else return NULL;}
 	void clear(){for(int i=0;i<16;++i)m[i]=.0;}
 	void loadIdentity(){clear();m[0]=m[5]=m[10]=m[15]=1.;}
-	void translate(double x,double y,double z)
+	void translate(float x,float y,float z)
 	{
 		smMatrix tmp;tmp.loadIdentity();
 		tmp.m[12]=x;tmp.m[13]=y;tmp.m[14]=z;
 		*this=*this*tmp;
 	}
-	void rotate(double a,double x,double y,double z)
+	void rotate(float a,float x,float y,float z)
 	{
 		if(smvec3d(x,y,z).l()<=EPS)return;
-		if(fabs(smvec3d(x,y,z).l()-1)>EPS)
+		if(fabsf(smvec3d(x,y,z).l()-1)>EPS)
 		{
 			smvec3d a(x,y,z);a.normalize();
 			x=a.x;y=a.y;z=a.z;
 		}
 		smMatrix tmp;
-		double c=cos(a),s=sin(a);
+		float c=cosf(a),s=sinf(a);
 		tmp.m[ 0]=x*x*(1-c)+c;
 		tmp.m[ 4]=x*y*(1-c)-z*s;
 		tmp.m[ 8]=x*z*(1-c)+y*s;

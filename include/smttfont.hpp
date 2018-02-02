@@ -13,6 +13,8 @@
 #include "smelt.hpp"
 #include <cwchar>
 #include <map>
+#include <utility>
+#include <vector>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
@@ -22,32 +24,26 @@
 #define ALIGN_CENTER 2
 #endif
 
-class smTTChar
-{
-private:
-	smQuad quad;
-	int rw,rh,_w,_h,xofs,yofs;
-	static SMELT *sm;
-public:
-	float w(){return (float)_w;}
-	float h(){return (float)_h;}
-	void free();
-	bool setChar(wchar_t c,FT_Face ttface);
-	void render(float x,float y,float z,DWORD col,float scalex,float scaley,bool rtl);
-};
+struct _smTexState;
+class _smTTChar;
 
 class smTTFont
 {
-protected:
+private:
 	FT_Library ftlib;
 	FT_Face ttface;
-private:
 	wchar_t buf[1025];
-	std::map<wchar_t,smTTChar> chars;
+	std::map<wchar_t,_smTTChar*> chars;
+	std::vector<_smTexState*> textures;
 	float w,h;
+	int mx,my,texw,texh;
+	unsigned _npot(unsigned x);
+	std::pair<SMTEX,std::pair<int,int>> _allocate_char(int rw,int rh);
+	static SMELT* sm;
 public:
-	bool loadTTF(const char* path,int pt);
-	bool loadTTFFromMemory(char* ptr,DWORD size,int pt);
+	~smTTFont();
+	bool loadTTF(const char* path,int pt,int cachesize_x=16,int cachesize_y=16);
+	bool loadTTFFromMemory(char* ptr,DWORD size,int pt,int cachesize_x=16,int cachesize_y=16);
 	void releaseTTF();
 	float getWidth(){return w;}
 	float getHeight(){return h;}
@@ -55,5 +51,6 @@ public:
 	void render(float x,float y,float z,DWORD col,int align,float scalex=1,float scaley=1);
 	DWORD getCacheSize();
 	void clearCache();
+	friend class _smTTChar;
 };
 #endif

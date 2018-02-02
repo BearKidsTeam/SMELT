@@ -71,7 +71,7 @@ bool doingNothing()
 	sm->smClrscr(0xFF000000);
 	//render the 3d entity.
 	e3d->render9f(0,0,0,theta,0,1,0,1);
-#define pp printf("(%.0f,%.0f,%.0f) (%.0f,%.0f,%.0f)\n",pos[0],pos[1],pos[2],rot[0],rot[1],rot[2]);
+#define pp printf("(%.0f,%.0f,%.0f) (%.0f,%.0f,%.0f)\n",pos[0],pos[1],pos[2],rot[0],rot[1],rot[2])
 	//camera manipulation key bindings.
 	if(sm->smGetKeyState(SMK_W)==SMKST_HIT)pos[1]+=10,pp;
 	if(sm->smGetKeyState(SMK_S)==SMKST_HIT)pos[1]-=10,pp;
@@ -147,13 +147,16 @@ int main()
 	fonttest.setScale(1.);
 
 	//load the truetype font.
-	if(!ttftest.loadTTF("/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",18))if(!ttftest.loadTTF("/usr/share/fonts/wenquanyi/wqy-microhei/wqy-microhei.ttc",18))sm->smLog("ttf load error!");
+	if(!ttftest.loadTTF("/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",18))
+	if(!ttftest.loadTTF("/usr/share/fonts/wenquanyi/wqy-microhei/wqy-microhei.ttc",18))
+	if(!ttftest.loadTTF("/usr/share/fonts/wqy-microhei/wqy-microhei.ttc",18))
+	sm->smLog("ttf load error!");
 
 	//load the texture.
 	tex=sm->smTextureLoad("SpriteSheet.png");
 	//load the sound files.
 	sfx=sm->smSFXLoad("tap.ogg");
-	bgm=sm->smSFXLoad("稲田姫樣に叱られるから.ogg");
+	bgm=sm->smSFXLoad("稲田姫様に叱られるから.ogg");
 	//set loop points of the bgm.
 	sm->smSFXSetLoopPoint(bgm,0xED80,0x1E0400);
 	//create the rendering target for the 3d scene.
