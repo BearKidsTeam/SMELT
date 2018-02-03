@@ -64,5 +64,5 @@ comments in the file for details.
 * Better documentation.
 * Sane way to build.
 * Unify OpenGL versions.
-* D3D version.
+* ~~D3D version.~~
 * Better tools?

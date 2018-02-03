@@ -132,8 +132,6 @@ std::pair<SMTEX,std::pair<int,int>> smTTFont::_allocate_char(int rw,int rh)
 	_smTexState* ptex=new _smTexState;
 	ptex->cx=ptex->cy=ptex->mh=0;
 	ptex->tex=sm->smTextureCreate(texw,texh);
-	DWORD* px=sm->smTextureLock(ptex->tex,0,0,texw,texh,false);
-	sm->smTexutreUnlock(ptex->tex);
 	ret.first=ptex->tex;
 	ret.second.first=ret.second.second=0;
 	ptex->cx+=rw;

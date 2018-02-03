@@ -534,7 +534,7 @@ void SMELT_IMPL::smTexutreUnlock(SMTEX tex)
 	if(!ptex->locpx)return;
 	if(!ptex->roloc)
 	{
-		DWORD *src=ptex->locpx+ptex->locw*ptex->loch,
+		DWORD *src=ptex->locpx+ptex->locw*(ptex->loch-1),
 			*dst=ptex->px+(((ptex->rh-ptex->locy-1)*ptex->rw)+ptex->locx);
 		for(int i=0;i<ptex->loch;++i)
 		{

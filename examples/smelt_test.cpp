@@ -185,7 +185,7 @@ int main()
 	//initialize the indicator.
 	ictest.init(100,5,0x80,tex,smTexRect(151,264,2,8));
 	//set the string of the truetype font renderer.
-	ttftest.updateString(L"truetype font test\nNow Playing: 稲田姫樣に叱られるから by ZUN");
+	ttftest.updateString(L"truetype font test\nNow Playing: 稲田姫様に叱られるから by ZUN");
 	//play the bgm.
 	sm->smSFXPlay(bgm,100,0,1.,true);
 	//enter the main loop.

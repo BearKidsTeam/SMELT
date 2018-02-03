@@ -538,11 +538,12 @@ void SMELT_IMPL::smTexutreUnlock(SMTEX tex)
 	if(!ptex->locpx)return;
 	if(!ptex->roloc)
 	{
-		DWORD *src=ptex->locpx,*dst=ptex->px+((ptex->locy*ptex->rw)+ptex->locx);
-		for(int i=0;i<ptex->loch;++i)//TODO: flip it...
+		DWORD *src=ptex->locpx+ptex->locw*(ptex->loch-1),
+			*dst=ptex->px+(((ptex->rh-ptex->locy-1)*ptex->rw)+ptex->locx);
+		for(int i=0;i<ptex->loch;++i)
 		{
 			memcpy(dst,src,ptex->locw*sizeof(DWORD));
-			dst+=ptex->rw;src+=ptex->locw;
+			dst-=ptex->rw;src-=ptex->locw;
 		}
 		if(ptex->lost)configTexture(ptex,ptex->rw,ptex->rh,ptex->px);
 		else
