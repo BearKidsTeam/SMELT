@@ -3,24 +3,19 @@ _SMELT -- The engine behind BLR3+._
 
 _Now has its own repo._
 
-A ~~totally useless~~ reference is now in the doc folder.
-
-A D3D version will be put into construction _soon_.
 
 ## Building
 Building the SDL/GLFW version of SMELT is now officially tested
 on debian sid, debian jessie, Arch Linux and Gentoo Linux.
 
 Theoretically both versions should work on Windows
-with little modification :)
+with little modification :) (actually I have already produced
+a Windows build successfully).
 
 Building dependencies on debian-based systems:
 
 >libfreetype6-dev libopenal-dev libsdl2-dev libpng-dev
 >libjpeg62-turbo-dev libvorbis-dev libogg-dev
-
-Now there's also an port that uses GLFW instead of SDL2. 
-Minor behavior differences exist between the two versions.
 
 Additional building dependencies for the GLFW version on a debian-based system:
 
@@ -28,6 +23,8 @@ Additional building dependencies for the GLFW version on a debian-based system:
 
 Now there's a OpenGL 3.2+ port for the GLFW version which can be found
 in the `glfw_m` folder. It is experimental and buggy. Use with caution.
+
+Please also note that minor differences exist across different versions.
 
 To build a module, just run make in the corresponding folder.
 Please note that CxImage is also a module.

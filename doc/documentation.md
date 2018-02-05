@@ -1,364 +1,449 @@
-A simple SMELT documentation for SMELT developers (myself) ...
-API Level 3
+# SMELT API documentation
+(API Level 3)
 
-Types==========================================================================
-DWORD: ranged 0~4294967296 (32 bit unsigned int)
-WORD: ranged 0~65536 (16 bit unsigned int)
-BYTE: ranged 0~256 (8 bit unsigned int)
-smHook: bool() call backs
-SMCHN: Channel handle. Generated when a effect was played.
-SMSFX: Sound FX handle.
-SMTEX: Texture handle.
-SMTRG: Render Target handle. Targets provide render to texture support.
+## Table of contents
+1. [Overview](#overview)
+2. [History](#history)
+5. [Macros](#macros)
+3. [Data Types](#types)
+4. [Core Functions](#core)
+5. [Extensions](#extensions)
+7. [Implementation details](#implementation)
+6. [General considerations](#considerations)
 
-Macros=========================================================================
-ARGB(a,r,g,b): Generates a hardware color with the specificed values.
-RGBA(r,g,b,a): Same as ARGB, with different parameter order.
-GET<A|R|G|B>(col): Extract alpha/red/green/blue value from a hardware color.
-SET<A|R|G|B>(col,a|r|g|b): Set alpha/red/green/blue value of a hardware color.
+## Overview <a name="overview"></a>
+SMELT is a wrapper class for hardware-accelerated graphics rendering,
+input handling and optionally, audio outputting. It works on X11, 
+wayland and Windows. (Not tested on macOS because I don't use Mac.)
 
-PI: 3.14159265358979323846f
+Currently, two implementations of SMELT exist. One uses SDL and the
+other uses GLFW. The implementation using GLFW is further divided into
+a OpenGL 1.2/2.1 version and a OpenGL 3.2 version.
 
-BLEND_ALPHAADD/BLEND_ALPHABLEND: Alpha blending methods.
-BLEND_COLORADD/BLEND_COLORMUL/BLEND_COLORINV: Color blending methods.
-BLEND_ZWRITE/BLEND_NOZWRITE: Depth blending methods.
-The BLEND_* macros of the different types can be or'd together.
+## History <a name="history"></a>
+SMELT is emerged from [hge-unix](https://icculus.org/hge-unix/), which
+in turn was a port of HGE (Haaf's Game Engine) to MacOS X and UNIX.
+Initially, I use hge-unix for my BLR series games. However starting from
+an early testbed version of the still unreleased BLR 3, some 3D
+rendering is required. So I added simple 3D scene rendering to hge-unix
+and the original Windows version. I also wrote a TTF rendering module
+for HGE and hge-unix. Finally, I decided to fork it.
 
-FPS_FREE/FPS_VSYNC: Special fps values.
+After that, SMELT got new functionalities, new ports, and most
+importantly, the code looks less messed up _to me_. However if you have
+ever used HGE, you may still find the API of SMELT familiar.
 
-INPUT_*: Input event types.
+## Macros <a name="macro"></a>
+- `ARGB(a,r,g,b)`: Generates a hardware color with the specificed values.
+- `RGBA(r,g,b,a)`: Same as ARGB, with different parameter order.
+- `GET<A|R|G|B>(col)`: Extract alpha/red/green/blue value from a hardware color.
+- `SET<A|R|G|B>(col,a|r|g|b)`: Set alpha/red/green/blue value of a hardware color.
 
-PRIM_*: Primitive types.
+- `PI`: `3.14159265358979323846f`
 
-SMELT_APILEVEL: SMELT api version.
+- `BLEND_ALPHAADD/BLEND_ALPHABLEND`: Alpha blending methods.
+- `BLEND_COLORADD/BLEND_COLORMUL/BLEND_COLORINV`: Color blending methods.
+- `BLEND_ZWRITE/BLEND_NOZWRITE`: Depth test options.
 
-SMINP_*: Key modifiers. They can be or'd together.
-SMKST_*: Key states.
-SMK_*: Keys.
+The `BLEND_*` macros of the different types can be or'd together.
 
-TPOT_*, TFLT_*: Texture Options.
+- `FPS_FREE/FPS_VSYNC`: Special fps values.
+- `INPUT_*`: Input event types.
+- `PRIM_*`: Primitive types.
+- `SMINP_*`: Key modifiers. These can be or'd together.
+- `SMK_*`: Key scan codes.
+- `SMKST_*`: Key states.
+- `TPOT_*, TFLT_*`: Texture Options.
 
-Sturctures=====================================================================
-smInpEvent: Input event structure.
--chcode: Char code.
--sccode: Key scan code.
--type: Input event type. The macros INPUT_* are used.
--flag: Modifiers. The macros SMINP_* are used.
--wheel: Wheel motion.
--x,y: Mouse position.
+- `SMELT_APILEVEL`: SMELT api version.
 
-smVertex: Vertex structure.
--x,y,z: Position. Z can be used for depth testing in 2D mode.
--col: Vertex color.
--tx,ty: Texture coordinates.
+## Data Types <a name="types"></a>
+- `DWORD`: equivalent to `uint32_t`
+- `WORD`: equivalent to `uint16_t`
+- `BYTE`: equivalent to `uint8_t`
+- `smHook`: (*bool)() function pointers used as callbacks.
+- `SMCHN`: Represent a channel of sound playback.
+- `SMSFX`: Represent a sound effect.
+- `SMTEX`: Opaque texture type.
+- `SMTRG`: Opaque render target type.
 
-smTriangle: Triangle primitive structure.
--v[3]: Vertexes of the triangle.
--tex: Texture of the triangle.
--blend: Blend mode of the triangle. The macros BLEND_* are used.
+`smInpEvent`: Input event structure.
 
-smQuad: Quadrilateral primitive structure.
--v[4]: Vertexes of the quadrilateral.
--tex: Texture of the quadrilateral.
--blend: Blend mode of the quadrilateral. The macros BLEND_* are used.
+- `chcode`: Char code.
+- `sccode`: Key scan code.
+- `type`: Input event type. The macros `INPUT_*` are used.
+- `flag`: Modifiers. Use bitwise and (`&`) with a `SMINP_*` value to
+test for a modifier.
+- `wheel`: Wheel motion.
+- `x,y`: Mouse position.
+
+`smVertex`: Vertex structure.
+
+- `x,y,z`: Position. `z` can be used for depth testing in 2D mode.
+- `col`: Vertex color. 
+- `tx,ty`: Texture coordinates.
+
+`smTriangle`: Triangle primitive structure.
+
+- `v[3]`: Vertices of the triangle.
+- `tex`: Texture of the triangle.
+- `blend`: Blend mode of the triangle. The macros `BLEND_*` are used.
+
+`smQuad`: Quadrilateral primitive structure.
+
+- `v[4]`: Vertices of the quadrilateral.
+- `tex`: Texture of the quadrilateral.
+- `blend`: Blend mode of the quadrilateral. The macros `BLEND_*` are used.
+
 WARNING: Quadrilaterals are treated as two triangles internally.
 You may get unwanted results if the quadrilateral is not a parallelogram.
 
-smTexRect: Texture rectangle sturcture.
--x,y: Top left coordinate of the texture used.
--w,h: Width & height of the texture used.
+`smTexRect`: Texture rectangle sturcture.
 
-Exposed function===============================================================
-SMELT* smGetInterface(int apilevel)
+- `x,y`: Top left coordinate of the texture used.
+- `w,h`: Width & height of the texture used.
+
+`smHandler`: Alternative handler class.
+
+- `virtual bool handlerFunc()=0`
+
+Implement the `handlerFunc()` and instances of this class can be used as
+an alternative to `smHook` callbacks.
+
+## Core Functions <a name="core"></a>
+### External function
+
+`SMELT* smGetInterface(int apilevel)`
+
 Returns an interface to the SMELT core functions if the apilevel matches the
 internal one, otherwise it returns NULL.
 
-Packaged SMELT core functions==================================================
-All these functions are packaged in the class "SMELT".
+The internal facilities of SMELT are strectly singletons and this function
+provides reference counting. Currently there is no way to use two or more
+instances of SMELT at the same time in one application (unless you rename
+the entire library).
 
-void smRelease() [core]
+### Functions inside the `SMELT` class
+
+- `void smRelease()`  
 Release one reference to the SMELT core. Once all references are released,
-the core will commit suicide and all resources used by it will be freed.
+the internal SMELT instance will free all the resources associated with it.
+**ALL pointers to the SMELT core generated before are invalidated!**
 
-bool smInit() [core]
-Initialize the SMELT interface, including the OpenGL/Direct3D interfaces, the
-OpenAL interfaces and the input interfaces. Functions from these interfaces
-won't function until smInit() is called. The application window will also
-be created.
-If the interfaces are initialized successfully, this function returns true, 
-otherwise it returns false. The errors are written to stderr and the log file
-if set.
+- `bool smInit()`  
+Initialize the SMELT core.  
+Creates application window, initializes video, audio and input handling.
+No functions in these categories can be called before initialzing the
+core.  
+You might want to do some setup works before calling this.  
+If the core is initialized successfully, this function returns true,  
+otherwise it returns false. The errors are written to stderr and the log
+file if set.
 
-void smFinale() [core]
-Deinitialize the SMELT interface. This function closes the application window
-and frees all resources managed by SMELT.
+- `void smFinale()`  
+Deinitialize the SMELT core. This function closes the application window
+and frees all resources managed by SMELT.  
+Unlike the behavior of `smRelease()` after the reference count reaching
+zero, calling `smFinale()` retains the validity of all SMELT core pointers.
+The core returns to the state prior to calling `smInit()`.
 
-void smMainLoop() [core]
-Starts the main loop, which calls UpdateFunc/FocFunc/UnFocFunc/QuitFunc at
-proper occasion.
-This function requires the UpdateFunc set and the initialization of the SMELT 
-interface.
+- `void smMainLoop()`  
+Enters the main loop.  
+The main loop handles window events (key press, close request, movement
+and resize etc) and calls your update function regularly.  
+This function requires the UpdateFunc set and initialization of the
+core.
 
-void smUpdateFunc(smHook func)  [core]
-void smUpdateFunc(smHandler* h) [core]
-Sets the update function.
-The update function returns bool and takes no parameters.
+- `void smUpdateFunc(smHook func)`
+- `void smUpdateFunc(smHandler* h)`  
+Sets the update function.  
 If the update function returns true, the main loop will break, otherwise
-the main loop runs perpetually.
-The update function is called every frame.
+the main loop goes on.
+The update function is called every frame.  
 If both the handler and the hook are set, the hook will be executed first.
 
-void smUnFocFunc(smHook func)  [core]
-void smUnFocFunc(smHandler* h) [core]
+- `void smUnFocFunc(smHook func)`
+- `void smUnFocFunc(smHandler* h)`  
 Sets the unfocus event handler.
-The unfocus function is called when the application window loses focus.
+The unfocus function is called when the application window loses focus.  
 If both the handler and the hook are set, the hook will be executed first.
 
-void smFocFunc(smHook func)  [core]
-void smFocFunc(smHandler* h) [core]
+- `void smFocFunc(smHook func)`
+- `void smFocFunc(smHandler* h)`  
 Sets the focus event handler.
-The focus functions is called when the application window gains focus.
+The focus functions is called when the application window gains focus.  
 If both the handler and the hook are set, the hook will be executed first.
 
-void smQuitFunc(smHook func)  [core]
-void smQuitFunc(smHandler* h) [core]
+- `void smQuitFunc(smHook func)`
+- `void smQuitFunc(smHandler* h)`  
 Sets the quit event handler.
-Called when the user send a quit request to the application (e.g. by pressing
-the close button).
+Called when the user send a quit request to the application (e.g. by
+pressing the close button).
 If the handler/hook returns true, the quit request will be rejected and the
-application will keep running.
+application will keep running.  
+If both the handler and the hook are set, the hook will be executed first.
 
-void smWinTitle(const char* title) [core]
+- `void smWinTitle(const char* title)`  
 Sets the application window title.
 The default title is "untitled".
 
-bool smIsActive() [core]
-Returns true if the application window has focus.
+- `bool smIsActive()`  
+Returns true if the application window has focus. Otherwise returns false.
 
-void smNoSuspend(bool para) [core]
+- `void smNoSuspend(bool para)`  
 By default, the update function won't be called when the application
-window doesn't have focus (para=false).
-Call this with para=true to make SMELT behave differently.
+window doesn't have focus (`para=false`).
+Call this with `para=true` to make SMELT keep running when the window is
+not focused.
 
-void smVidMode(int resX,int resY,bool _windowed) [core]
+- `void smVidMode(int resX,int resY,bool _windowed)`  
 Sets the application video mode.
-The default mode is 800 x 600 fullscreen.
-Inappropriate values may cause the failure of smInit().
-In addition, only the _windowed parameter can be changed on-the-fly.
+The default mode is 800 x 600 fullscreen.  
+Inappropriate values may cause the failure of smInit().  
+In addition, only the `_windowed` parameter can be changed after the
+creation of the window.
 
-void smLogFile(const char* path) [core]
+- `void smLogFile(const char* path)`  
 Sets the log file path.
 
-void smLog(const char* format,...) [core]
-Write something to the log file.
-The C-style formatting can be used.
+- `void smLog(const char* format,...)`  
+Write something to the log file. C-style formatting can be used.  
 The log will be written to stderr and the log file if set.
 
-void smScreenShot(const char* path) [core]
+- `void smScreenShot(const char* path)`  
 Takes a shot of the application window content and saves it to the
-given path.
+given path.  
+Unimplemented in GLFW versions.
 
-
-void smSetFPS(int fps) [core/FPS]
+- `void smSetFPS(int fps)`  
 Sets the desired FPS value.
-The macros FPS_* can be used.
+The macros FPS_* can be used. Other values greater than 0 limits the
+maximum FPS.
 
-float smGetFPS() [core/FPS]
+- `float smGetFPS()`  
 Gets the current FPS value.
-The current FPS value is updated every second.
+This value is updated once a second.
 
-float smGetDelta() [core/FPS]
+- `float smGetDelta()`  
 Gets the delta time between the current frame and the last frame.
 
-float smGetTime() [core/FPS]
-Gets the time in milliseconds since the call to smInit().
+- `float smGetTime()`  
+Gets the time in milliseconds since the call to `smInit()`.
 
-SMSFX smSFXLoad(const char *path) [core/SFX]
-Loads a sound file from the given path. Only ogg and wav files are supported.
-Further more, due to the restrictions of OpenAL, only 8/16bit mono/stereo formats
-are supported.
+- `SMSFX smSFXLoad(const char *path)`  
+Loads a sound file from the given path. Currently only ogg vorbis and wav
+files are supported.
+~~Further more, due to the restrictions of openal-soft, only 8/16bit
+mono/stereo formats are supported.~~ Seems not true anymore.  
+**This function loads the entire decompressed sample into main memory,
+and may take some time.** Fortunately for you, this function can be called
+from another thread.
 
-SMSFX smSFXLoadFromMemory(const char *ptr,DWORD size) [core/SFX]
-Loads a sound file from the given memory block. Limitations are the same to that
-of smSFXLoad.
+- `SMSFX smSFXLoadFromMemory(const char *ptr,DWORD size)`  
+Loads a sound file from the given memory block.  
+Limitations of `smSFXLoad()` also applies.
 
-SMCHN smSFXPlay(SMSFX fx,int vol=100,int pan=0,float pitch=1.,bool loop=0)
-[core/SFX]
-Plays the given SFX. All parameters except the fx handle is optional.
+- `SMCHN smSFXPlay(SMSFX fx,int vol=100,int pan=0,float pitch=1.,bool loop=0)`  
+Plays the given SFX. All parameters except the FX name is optional.  
 A channel is generated and can be used to control the playing of the SFX.
-The channel is valid until it stops.
-Volume should be 0~100.
-Panning should be -100~100.
-The values will be clamped to the range given above.
+The channel is valid until it stops.  
+Volume should be 0~100.  
+Panning should be -100~100.  
+These values will be clamped to the range given above.  
+Note: There's a limit of the total available channels. This is defined in
+the header `smelt\_config.hpp` with the macro `SRC_MAX`. If you are playing
+too many channels simultaneously or have too many channels paused, you
+may exhaust all channels and cause this function to fail. If it fails,
+the channel name equals to 0.
 
-float smSFXGetLengthf(SMSFX fx) [core/SFX]
+- `float smSFXGetLengthf(SMSFX fx)`  
 Gets the sound length in seconds.
 
-DWORD smSFXGetLengthd(SMSFX fx) [core/SFX]
-Gets the sound length in samples.
+- `DWORD smSFXGetLengthd(SMSFX fx)`  
+Gets the sound length in number of samples.
 
-void smSFXSetLoopPoint(SMSFX fx,DWORD l,DWORD r) [core/SFX]
-Sets the loop point of a SFX. The loop points will be used when the fx is
-played with loop=true.
-The loop points are expressed in samples.
-By default, the whole SFX is looped.
-This function uses AL_SOFT_loop_points and may not work if SMELT isn't built
-against OpenAl Soft.
+- `void smSFXSetLoopPoint(SMSFX fx,DWORD l,DWORD r)`  
+Sets the loop point of a sound. The loop points will be used when the fx is
+played with `loop=true`.
+The unit of the parameters is #samples.
+By default, the whole sample is looped.  
+This function uses `AL_SOFT_loop_points` and may not work if SMELT isn't
+built against OpenAl Soft.
 
-void smSFXFree(SMSFX fx) [core/SFX]
+- `void smSFXFree(SMSFX fx)`  
 Releases the sound file from memory.
 The handle will be invalid thereafter.
 
-void smChannelVol(SMCHN chn,int vol) [core/SFX]
+- `void smChannelVol(SMCHN chn,int vol)`  
 Sets channel volume (0~100).
 
-void smChannelPan(SMCHN chn,int pan) [core/SFX]
+- `void smChannelPan(SMCHN chn,int pan)`  
 Sets channel panning (-100~100).
 
-void smChannelPitch(SMCHN chn,float pitch) [core/SFX]
+- `void smChannelPitch(SMCHN chn,float pitch)`  
 Sets channel pitch.
 
-void smChannelPause(SMCHN chn) [core/SFX]
+- `void smChannelPause(SMCHN chn)`  
 Pauses the channel.
 
-void smChannelResume(SMCHN chn) [core/SFX]
-Resumes the paused channel.
+- `void smChannelResume(SMCHN chn)`  
+Resumes a paused channel.
 
-void smChannelStop(SMCHN chn) [core/SFX]
+- `void smChannelStop(SMCHN chn)`  
 Stops the channel. The channel handle will be invalid thereafter.
 
-void smChannelPauseAll() [core/SFX]
+- `void smChannelPauseAll()`  
 Pauses all playing channels.
 
-void smChannelResumeAll() [core/SFX]
+- `void smChannelResumeAll()`  
 Resumes all channels.
 
-void smChannelStopAll() [core/SFX]
+- `void smChannelStopAll()`  
 Stops all channels.
 
-bool smChannelIsPlaying(SMCHN chn) [core/SFX]
+- `bool smChannelIsPlaying(SMCHN chn)`  
 Tests if a channel is playing.
 
-float smChannelGetPosf(SMCHN chn) [core/SFX]
-Gets current position in second.
+- `float smChannelGetPosf(SMCHN chn)`
+- `void smChannelSetPosf(SMCHN chn,float pos)`  
+Gets/sets current position in second.
 
-void smChannelSetPosf(SMCHN chn,float pos) [core/SFX]
-Sets current position in second.
+- `int smChannelGetPosd(SMCHN chn)`
+- `void smChannelSetPosd(SMCHN chn,int pos)`  
+Gets/sets current position in #sample.
 
-int smChannelGetPosd(SMCHN chn) [core/SFX]
-Gets current position in sample.
-
-void smChannelSetPosd(SMCHN chn,int pos) [core/SFX]
-Sets current position in sample.
-
-void smGetMouse2f(float *x,float *y) [core/input]
+- `void smGetMouse2f(float *x,float *y)`  
 Gets mouse position (within the window).
 
-void smSetMouse2f(float x,float y) [core/input]
+- `void smSetMouse2f(float x,float y)`  
 Sets mouse position (within the window).
 
-void smSetMouseGrab(bool enabled) [core/input]
+- `void smSetMouseGrab(bool enabled)`  
 Enables or disables mouse grabbing.
 Useful for 3D camera control handling.
 
-int smGetWheel() [core/input]
+- `int smGetWheel()`  
 Gets mouse wheel motion since the last frame.
 
-bool smIsMouseOver() [core/input]
+- `bool smIsMouseOver()`  
 Tests if the cursor is inside the application window.
 
-int smGetKeyState(int key) [core/input]
-Gets the state of the given key. The SMK_* macros can be used.
-Mouse buttons are treated as keys.
-The return values are one of the SMKST_* macros.
+- `int smGetKeyState(int key)`  
+Gets the state of the given key. The `SMK_*` macros can be used.
+Mouse buttons are treated as keys.   
+The return values are one of the `SMKST_*` macros:
+    * `SMKST_NONE`: the key is not pressed and is not just released either.
+    * `SMKST_RELEASE`: the key is not pressed but is just released.
+    * `SMKST_HIT`: the key is pressed but it was not pressed in the
+    last frame.
+    * `SMKST_KEEP`: the key is pressed and held since the last frame or
+    earlier.
 
-SMKST_NONE: the key is not pressed and is not just released either.
-SMKST_RELEASE: the key is not pressed but is just released.
-SMKST_HIT: the key is pressed but it was not pressed in the last frame.
-SMKST_KEEP: the key is pressed and held since the last frame or earlier.
-
-int smGetKey() [core/input]
+- `int smGetKey()`  
 Gets the key pressed last frame.
-If multiple keys are pressed, the last pressed one counts.
+If multiple keys are pressed, the last pressed one (the last one in the
+event queue) counts.
 
-bool smGetInpEvent(smInpEvent *e) [core/input]
+- `bool smGetInpEvent(smInpEvent *e)`  
 Gets a event from the input queue.
-The input parameter will be set to point the event.
-If there are no events in the input queue, this function will return false.
+The input parameter will be set to point the event.  
+If the input queue is empty, this function will return false.
 
-bool smRenderBegin2D(bool ztest=0,SMTRG trg=0) [core/GFX]
-Starts rendering a 2D scene.
-Set ztest to true if you want to use the z coordinate to control overlapping.
-Set trg to the desired rendering target to render everything to the target.
-The function resets the camera. You should setup the camera every frame.
+- `bool smRenderBegin2D(bool ztest=0,SMTRG trg=0)`  
+Starts rendering a 2D scene.  
+Set `ztest` to true if you want to use the z coordinate to control
+the layout.  
+Set trg to the desired rendering target to render everything to the
+target.  
+The function resets the camera. You have to setup the camera with
+`sm2DCamera5f3v`.  
+NOTE: Any rendering function is not functional outside the
+`smRenderBegin*D` function and its corresponding `smRenderEnd` function.
+
+- `bool smRenderBegin3D(float fov,SMTRG trg=0)`  
+Starts rendering a 3D scene.  
+Depth test is always enabled in this mode.  
+Set trg to the desired rendering target to render everything to the
+target.  
+The distances to clipping planes are hard-coded (0.1 and 1000). This may
+change in a future revision.  
+The function resets the camera. You have to setup the camera with
+`sm3DCamera6f2v`.  
+NOTE: Any rendering function is not functional outside the
+`smRenderBegin*D` function and its corresponding `smRenderEnd` function.
+
+- `bool smRenderEnd()`  
+Ends rendering the scene.  
 NOTE: Any rendering function is not functional outside the smRenderBegin*D
 function and its corresponding smRenderEnd function.
 
-bool smRenderBegin3D(float fov,SMTRG trg=0) [core/GFX]
-Starts rendering a 3D scene.
-Ztest is forced on in 3D mode.
-Set trg to the desired rendering target to render everything to the target.
-The projection matrix always has the near clipping value 0.1 and the far
-clipping value 1000.
-The function resets the camera. You should setup the camera every frame.
-NOTE: Any rendering function is not functional outside the smRenderBegin*D
-function and its corresponding smRenderEnd function.
-
-bool smRenderEnd() [core/GFX]
-Ends rendering the scene.
-NOTE: Any rendering function is not functional outside the smRenderBegin*D
-function and its corresponding smRenderEnd function.
-
-void sm3DCamera6f2v(float *pos,float *rot) [core/GFX/Rendering]
-Sets the 3D camera position and panning.
-Each float vector should countain three elements.
-The panning is Euler rotation (all in degrees).
-If any of the vectors is NULL, the function will reset the camera.
+- `void sm3DCamera6f2v(float *pos,float *rot)`  
+Sets the 3D camera position and panning.  
+Each float vector should countain three elements.  
+The panning is euler rotation (all in degrees).  
+If any of the vectors is `NULL`, the function will reset the camera
+instead.  
 The behaviour of the function is undefined in a 2D rendering session.
 
-void sm2DCamera5f3v(float *pos,float *dpos,float *rot) [core/GFX/Rendering]
-Sets the 2D camera transformation.
-pos should contain two elements describing the camera position.
-dpos should countain two elements describing the rotation centre.
-rot is the pointer to a single float describing the rotation (in degrees).
-If any of the vectors is NULL, the function will reset the camera.
+- `void sm2DCamera5f3v(float *pos,float *dpos,float *rot)`  
+Sets the 2D camera transformation.  
+`pos` should contain two elements for the camera's position.  
+`dpos` should countain two elements for the rotation centre.  
+`rot` is the pointer to a single float denoting the rotation (in degrees).
+If any of the vectors is `NULL`, the function will reset the camera
+instead.  
 The behaviour of the function is undefined in a 3D rendering session.
 
-void smMultViewMatrix(float *mat) [core/GFX/Rendering]
-Provides direct manipulation on the view matrix. You can use "look at" matrix
-here, for example.
-The matrix the same as the matrix defined in smMatrix, but stored in float.
-(That's fairly stupid...)
+- `void smMultViewMatrix(float *mat)`  
+Provides direct manipulation on the model view matrix.
+You can use "look at" matrix here, for example.  
+The matrix the same as the matrix defined in smMatrix (column-major),
+but stored in float (That's fairly stupid...).
 
-void smClrscr(DWORD color,bool clearcol=true,bool cleardep=true) [core/GFX/Rendering]
-Clears the screen/rendering target with color.
-Alpha channel is not applicable to the back buffer.
+- `void smClrscr(DWORD color,bool clearcol=true,bool cleardep=true)`  
+Clears the screen/rendering target with color.  
+Alpha channel is not applicable to the screen buffer.  
 Depth buffer will only be cleared if cleardep is set to true.
 The same applies to the color buffer.
 
-void smRenderLinefd(float x1,float y1,float z1,float x2,float y2,float z2,DWORD
-color) [core/GFX/Rendering]
+- `void smRenderLinefd(float x1,float y1,float z1,float x2,float y2,float z2,DWORD color)`  
 Renders a line from (x1,y1,z1) to (x2,y2,z2) in the given color.
-Lines have no textures.
+Lines never have textures.
 
-void smRenderLinefvd(float *p1,float *p2,DWORD color) [core/GFX/Rendering]
-Renders a line from (p1[0],p1[1],p1[2]) to (p2[0],p2[1],p2[2]) in the given color.
+- `void smRenderLinefvd(float *p1,float *p2,DWORD color)`  
+Renders a line from (p1[0],p1[1],p1[2]) to (p2[0],p2[1],p2[2]) in the
+given color.
 
-void smRenderTriangle(smTriangle *t) [core/GFX/Rendering]
+- `void smRenderTriangle(smTriangle *t)`  
 Renders a triangle.
 
-void smRenderQuad(smQuad *q) [core/GFX/Rendering]
+- `void smRenderQuad(smQuad *q)`  
 Renders a quadrilateral.
 
-smVertex* smGetVertArray() [core/GFX/Rendering]
-Return a pointer to the internal vertex array for advanced batching.
-The vertex array is rendered and cleared in this function. So you will always
-get a full vertex array.
-By default, the size of the vertex array is 4000.
+- `smVertex* smGetVertArray()`  
+Return a pointer to the internal vertex array for advanced drawing.
+The vertex array is rendered and cleared before returning it to you.
+So you will always get the whole vertex array.  
+After filling the vertex array, call `smDrawVertArray()` to draw them.  
+By default, the size of the vertex array is 4000. This is defined in the
+header `smelt_config.hpp` with the macro `VERTEX_BUFFER_SIZE`.
 
-void smDrawVertArray(int prim,SMTEX texture,int blend,int _primcnt)
-[core/GFX/Rendering]
-Draws the vertex array modified by advanced batching.
+- `void smDrawVertArray(int prim,SMTEX texture,int blend,int _primcnt)`  
+Draws the vertex array modified by `smGetVertArray()`.
+The first parameter represents the type of primitive to be drawn. You can
+use the macros `PRIM_*` here.
+
+- `void smDrawCustomIndexedVertices(smVertex* vb,WORD* ib,int vbc,int ibc,int blend,SMTEX texture)`  
+Draw indexed vertices. The primitive type is always triangle.  
+This function basically allows you to pass custom indices to
+`glDrawElements()` instead the built in ones.
+If you are not quite sure about what this function does, just ignore it.
+    - `vb`: pointer to vertices to be drawn.
+	- `ib`: pointer to indices of the vertices.
+	- `vbc`: number of vertices.
+	- `ibc`: number of indices.
+	- `blend`: blending mode.
+	- `texture`: texture used for the drawing.  
 
 SMTRG smTargetCreate(int w,int h,int ms=0) [core/GFX]
 Creates a rendering target (sized w*h) with multisampling level ms.
@@ -637,7 +722,8 @@ writes to the Z buffer when rendered.
 
 smGrid=========================================================================
 The extension implements a grid used for rendering distorted entity.
-Grid sample:
+Sample grid:
+```
 +-----+-----+
 |     |     |
 |     |     |
@@ -647,9 +733,11 @@ Grid sample:
 |     |     |
 |     |     |
 +-----+-----+
+```
 This is a simple 3*3 grid, undistorted. If we fit a texture onto it we will
 see a rectangle with that texture.
 Now we can distort it like this:
+```
 +-----+-----+
  \     \     \
   \     \     \
@@ -659,8 +747,8 @@ Now we can distort it like this:
       \     \     \
        \     \     \
         +-----+-----+
-If we fit a texture onto this grid, we will see a parallelogram (probably
-glitched because it's only a 3*3 grid).
+```
+If we fit a texture onto this grid, we will see a parallelogram.
 The grid looks better when the resolution is higher.
 With this extension we can implement water/lens/wrapping effect and curved
 lasers easily.

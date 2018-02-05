@@ -907,21 +907,18 @@ void SMELT_IMPL::finiOGL()
 	delete[] indexBuf;indexBuf=NULL;
 	if(pOpenGLDevice)
 	{
-		if(1)
+		if(VertexBufferObject!=0)
 		{
-			if(VertexBufferObject!=0)
-			{
-				glBindVertexArray(VertexArrayObject);
-				glBindBuffer(GL_ARRAY_BUFFER,0);
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
-				glDeleteBuffers(1,&VertexBufferObject);
-				glDeleteBuffers(1,&IndexBufferObject);
-				glBindVertexArray(0);
-				glDeleteVertexArrays(1,&VertexArrayObject);
-				VertexArrayObject=0;
-				VertexBufferObject=0;
-				IndexBufferObject=0;
-			}
+			glBindVertexArray(VertexArrayObject);
+			glBindBuffer(GL_ARRAY_BUFFER,0);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+			glDeleteBuffers(1,&VertexBufferObject);
+			glDeleteBuffers(1,&IndexBufferObject);
+			glBindVertexArray(0);
+			glDeleteVertexArrays(1,&VertexArrayObject);
+			VertexArrayObject=0;
+			VertexBufferObject=0;
+			IndexBufferObject=0;
 		}
 		glDeleteProgram(ShaderProgram);
 		delete pOpenGLDevice;
