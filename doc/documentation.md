@@ -4,12 +4,12 @@
 ## Table of contents
 1. [Overview](#overview)
 2. [History](#history)
-5. [Macros](#macros)
-3. [Data Types](#types)
-4. [Core Functions](#core)
-5. [Extensions](#extensions)
+3. [Macros](#macros)
+4. [Data Types](#types)
+5. [Core Functions](#core)
+6. [Extensions](#extensions)
 7. [Implementation details](#implementation)
-6. [General considerations](#considerations)
+8. [General considerations](#considerations)
 
 ## Overview <a name="overview"></a>
 SMELT is a wrapper class for hardware-accelerated graphics rendering,
@@ -80,7 +80,7 @@ test for a modifier.
 `smVertex`: Vertex structure.
 
 - `x,y,z`: Position. `z` can be used for depth testing in 2D mode.
-- `col`: Vertex color. 
+- `col`: Vertex color. This color is in the format "AARRGGBB" (hex).
 - `tx,ty`: Texture coordinates.
 
 `smTriangle`: Triangle primitive structure.
@@ -247,8 +247,8 @@ Limitations of `smSFXLoad()` also applies.
 Plays the given SFX. All parameters except the FX name is optional.  
 A channel is generated and can be used to control the playing of the SFX.
 The channel is valid until it stops.  
-Volume should be 0~100.  
-Panning should be -100~100.  
+Volume should be in [0,100].  
+Panning should be [-100,100].  
 These values will be clamped to the range given above.  
 Note: There's a limit of the total available channels. This is defined in
 the header `smelt\_config.hpp` with the macro `SRC_MAX`. If you are playing
@@ -275,10 +275,10 @@ Releases the sound file from memory.
 The handle will be invalid thereafter.
 
 - `void smChannelVol(SMCHN chn,int vol)`  
-Sets channel volume (0~100).
+Sets channel volume ([0,100]).
 
 - `void smChannelPan(SMCHN chn,int pan)`  
-Sets channel panning (-100~100).
+Sets channel panning ([-100,100]).
 
 - `void smChannelPitch(SMCHN chn,float pitch)`  
 Sets channel pitch.
@@ -445,84 +445,152 @@ If you are not quite sure about what this function does, just ignore it.
 	- `blend`: blending mode.
 	- `texture`: texture used for the drawing.  
 
-SMTRG smTargetCreate(int w,int h,int ms=0) [core/GFX]
-Creates a rendering target (sized w*h) with multisampling level ms.
-Modern OpenGL supports non-power-of-two targets, however some of the D3D9
-hardwares doesn't.
-The target will be automatically resized, larger than the requested size, if
-the given size is not supported.
-Multisampling is disabled if ms=0. If multisampling is not supported, it
-will be disabled automatically.
+- `SMTRG smTargetCreate(int w,int h,int ms=0)`  
+Creates a rendering target (sized `w*h`) with multisampling level ms.  
+Modern OpenGL supports non-power-of-two sized targets. However some legacy
+hardware may lack the support.
+In this case, the target will be automatically enlarged.  
+Multisampling is disabled if `ms=0`. This value is only a hint to SMELT.
+If multisampling is not supported, it will be disabled automatically.
 
-SMTEX smTargetTexture(SMTRG targ) [core/GFX]
-Gets the texture of the rendering target.
+- `SMTEX smTargetTexture(SMTRG targ)`  
+Gets the texture of the rendering target. The texture contains the resulting
+image rendered to that target.
 
-void smTargetFree(SMTRG targ) [core/GFX]
+- `void smTargetFree(SMTRG targ)`  
 Frees the rendering target.
 
-SMTEX smTextureCreate(int w,int h) [core/GFX]
-Creates a blank texture (sized w*h).
-OpenGL version supports non-power-of-two textures, however some of the D3D9
-hardwares doesn't.
-The texture will be automatically resized, larger than the requested size, if
-it is not supported.
+- `SMTEX smTextureCreate(int w,int h)`  
+Creates a blank texture (sized `w*h`).
+Modern OpenGL supports non-power-of-two sized textures. However some legacy
+hardware may lack the support.
+In this case, the texture will be automatically enlarged.
 
-SMTEX smTextureLoad(const char *path,bool mipmap=false) [core/GFX]
+- `SMTEX smTextureLoad(const char *path,bool mipmap=false)`  
 Loads texture from the given file.
-OpenGL version supports non-power-of-two textures, however some of the D3D9
-hardwares doesn't.
-The texture will be automatically resized, larger than the requested size, if
-it is not supported.
-mipmapping doesn't work in OpenGL versions.
+The POT (power-of-two) issue above also applies here.  
+Mipmapping is not implemented yet.
 
-SMTEX smTextureLoadFromMemory(const char *ptr,DWORD size,bool mipmap=false)
-[core/GFX]
+- `SMTEX smTextureLoadFromMemory(const char *ptr,DWORD size,bool mipmap=false)`  
 Loads texture from the given memory block.
-OpenGL version supports non-power-of-two textures, however some of the D3D9
-hardwares doesn't.
-The texture will be automatically resized, larger than the requested size, if
-it is not supported.
-mipmapping doesn't work in OpenGL versions.
+See also `smTextureLoad()`.
 
-void smTextureFree(SMTEX tex) [core/GFX]
+- `void smTextureFree(SMTEX tex)`  
 Release the texture from memory.
 
-void smTextureOpt(int potopt=TPOT_NONPOT,int filter=TFLT_LINEAR) [core/GFX]
+- `void smTextureOpt(int potopt=TPOT_NONPOT,int filter=TFLT_LINEAR)`  
 Sets texture options.
-TPOT_POT: textures dimensions are resized to the minimal power of two value.
-TPOT_NONPOT: use textures whose dimensions are not power of two directly.
-Please note that only power-of-two textures supports texture repeating.
-TFLT_LINEAR: use the linear filter for texture scaling.
-TFLT_NEAREST: use the nearest filter for texture scaling.
+    - `TPOT_POT`: textures dimensions are _always_ resized to the minimal
+	power of two value. In this mode, textures repeat themselves if the
+	texture coordinate is greater than one (`GL_REPEAT` is used).
+    - `TPOT_NONPOT`: use textures whose dimensions are not power of
+	two directly. If unsupported by the hardware, textures will
+	be resized anyway. This turns off texture repeating.
+    - `TFLT_LINEAR`: use the linear filter for texture scaling.
+    - `TFLT_NEAREST`: use the nearest filter for texture scaling.
 
-int smTextureGetWidth(SMTEX tex,bool original=false) [core/GFX]
-Gets the width of the texture.
-If original==false and the texture is resized, the function will return the
-resized p-o-t width of the texture.
+- `int smTextureGetWidth(SMTEX tex,bool original=false)`  
+Gets the width of the texture.  
+If `original==false` and the texture is resized, the function will return
+the resized POT width of the texture.
 Otherwise it returns the actual width of the texture file.
 
-int smTextureGetHeight(SMTEX tex,bool original=false) [core/GFX]
-Gets the height of the texture.
-If original==false and the texture is resized, the function will return the
-resized p-o-t height of the texture.
+- `int smTextureGetHeight(SMTEX tex,bool original=false)`  
+Gets the height of the texture.  
+If `original==false` and the texture is resized, the function will return
+the resized POT height of the texture.
 Otherwise it returns the actual height of the texture file.
 
-DWORD* smTextureLock(SMTEX tex,int l,int t,int w,int h,bool ro=true) [core/GFX]
-Locks the texture for reading/writing.
-The locked area is defined as (l,t,w,h): left, top, width, height.
-if ro==true, the changes won't be written back to the video memory.
-Textures of rendering targets cannot be locked.
+- `DWORD* smTextureLock(SMTEX tex,int l,int t,int w,int h,bool ro=true)`  
+Locks the texture for reading/writing.  
+The locked area is defined as `(l,t,w,h)`: left, top, width, height.
+if `ro==true`, the changes won't be uploaded back to the video memory.
+Textures of rendering targets cannot be locked.  
+Currently, textures are locked **upside-down** -- this is due to the fact
+that textures in OpenGL originate from bottom-left. However the `top`
+parameter really represents what its name means. This is insane but I've
+got used to it. AND the locked pixels are in `AABBGGRR` format with
+`AA` at the side of the most significant bit, which makes everything
+even better.
 
-void smTexutreUnlock(SMTEX tex) [core/GFX]
+- `void smTexutreUnlock(SMTEX tex)`  
 Unlocks the texture so that it can be used for rendering.
-The changes will be commited to the video memory if ro==false when locking
-the texture.
+The changes will only be commited to the video memory if `ro==false` when
+locking the texture.
 
-SMELT extensions===============================================================
+## Extensions <a name="extensions"></a>
+
+### smAnim
+This extension provides texture management and animated entity support.
+
+### smBMFont
+This extension provides bitmap font support.
+
+### smColor
+This extension provides conversion between color models.
+
+### smDataPack
+This extension provides managed resources loading/writing.
+
+### smEntity
+This extension provides easy entity rendering methods.
+
+### smGrid
+This extension allows you to create distortion using a grid.
+
+### smIndicator
+This extension implements several value indicators.
+
+### smMath
+This extension implements common math routines.
+
+### smProgresser
+This extension implements interpolation.
+
+### smRandom
+This extension implements a pseudo random number generator.
+
+### smTTFont
+This extension implements truetype font rendering.
+
+## Implementation details <a name="implementation"></a>
+
+- The OpenGL implementation uses a client-side vertex array.
+All `smRender*()` rendering commands are buffered here before
+a draw has to be done. The size of the vertex array can be
+adjusted by the `VERTEX_BUFFER_SIZE` macro, found in `smelt_config.hpp`.
+- A draw batch has to be done when at least one of these changes:
+    - Primitive type
+	- Texture
+	- Blending mode
+  or when...
+    - the vertex array is full
+	- `smRenderEnd()` is called
+	- changing camera properties
+	- using 'advanced' drawing functions (`smGetVertArray()`,
+	`smDrawCustomIndexedVertices`)
+- When doing a batch draw, SMELT uploads the _whole_ vertex array
+(actually only the portion with your data) to OpenGL. So there's no
+real need for a vertex buffer object, but it hurts if you draw a lot
+of static objects.
+- The sound system implementation puts a limit on the number of effects
+played at the same time. This is defined by the `SRC_MAX` macro in
+`smelt_config.hpp`.
+- Currently there's no way to use two or more instances of SMELT in one
+application at the same time.
+
+## General considerations <a name="considerations"></a>
+- For the sake of performance, keep the number of draw batches as low as
+possible. Avoid switching properties that will trigger a batch too
+frequently.
+- ~~Use profiling functions to help improve performance.~~ Profiling
+functions are not yet added.
+- If you are going to draw something with plenty of coinciding vertices,
+consider using `smDrawCustomIndexedVertices()`.
+
+Old junk starting from here.
 
 smAnimation====================================================================
-The extension provides texture management and animated entity support.
-
 Texture info class: smTexInfo
 smTexRect rect;							Texture rectangle
 char *name,*path;						name and internal path of the texture

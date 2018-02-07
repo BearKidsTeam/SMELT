@@ -24,8 +24,8 @@ static const char* fixedfunc_pipeline_vsh=
 	"uniform mat4 mproj;"
 	"void main(){"
 		"gl_Position=mproj*mmodv*vec4(vp,1.0f);"
-		"ftc=vec2(vtc.x,1.0f-vtc.y);"//do flipping at a lower level
-		"fc=vc;"
+		"ftc=vec2(vtc.x,1.0f-vtc.y);"
+		"fc.rgba=vc.bgra;"
 	"}"
 ;
 static const char* fixedfunc_pipeline_fsh=
@@ -36,7 +36,7 @@ static const char* fixedfunc_pipeline_fsh=
 	"uniform sampler2D tex;"
 	"void main(){"
 		"color=fc*texture(tex,ftc);"
-		"if(color.a<1./256.)discard;"//alpha testing
+		"if(color.a<1./256.)discard;"
 	"}"
 ;
 struct glTexture
@@ -262,7 +262,7 @@ void SMELT_IMPL::smDrawCustomIndexedVertices(smVertex* vb,WORD* ib,int vbc,int i
 	{
 		batchOGL();
 
-		float twm=1.,thm=1.;
+		float twm=-1.,thm=-1.;
 		if(texture)
 		{
 			glTexture *ptex=(glTexture*)texture;
@@ -281,29 +281,22 @@ void SMELT_IMPL::smDrawCustomIndexedVertices(smVertex* vb,WORD* ib,int vbc,int i
 				vertexArray[i].z=-vertexArray[i].z;
 			}
 		}
+		if(twm>0&&thm>0)
 		for(int i=0;i<vbc;++i)
 		{
 			vb[i].tx*=twm;
-			vb[i].ty=(1.-vb[i].ty)*thm;
-			DWORD color=vb[i].col;
-			BYTE *col=(BYTE*)&vb[i].col;
-			BYTE a=((color>>24)&0xFF);
-			BYTE r=((color>>16)&0xFF);
-			BYTE g=((color>> 8)&0xFF);
-			BYTE b=((color>> 0)&0xFF);
-			col[0]=r;col[1]=g;
-			col[2]=b;col[3]=a;
+			vb[i].ty*=thm;
 		}
 		if(texture!=primTex)bindTexture((glTexture*)texture);
 		if(blend!=primBlend)setBlend(blend);
 		glBindVertexArray(VertexArrayObject);
 		glBindBuffer(GL_ARRAY_BUFFER,VertexBufferObject);
-		glBufferData(GL_ARRAY_BUFFER,sizeof(smVertex)*vbc,vb,GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER,sizeof(smVertex)*vbc,vb,GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,IndexBufferObject);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(GLushort)*ibc,ib,GL_STATIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(GLushort)*ibc,ib,GL_DYNAMIC_DRAW);
 		glDrawElements(GL_TRIANGLES,ibc,GL_UNSIGNED_SHORT,0);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,IndexBufferObject);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(GLushort)*((VERTEX_BUFFER_SIZE*6)/4),indexBuf,GL_STATIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(GLushort)*((VERTEX_BUFFER_SIZE*6)/4),indexBuf,GL_DYNAMIC_DRAW);
 		glBindVertexArray(0);
 		if(texture!=primTex)bindTexture((glTexture*)primTex);
 
@@ -546,8 +539,8 @@ void SMELT_IMPL::smTexutreUnlock(SMTEX tex)
 		{
 			glBindTexture(GL_TEXTURE_2D,ptex->name);
 			glTexSubImage2D(GL_TEXTURE_2D,0,ptex->locx,
-										  (ptex->rh-ptex->locy)-ptex->loch,ptex->locw,ptex->loch,GL_RGBA,
-										  GL_UNSIGNED_BYTE,ptex->locpx);
+							(ptex->rh-ptex->locy)-ptex->loch,ptex->locw,ptex->loch,GL_RGBA,
+							GL_UNSIGNED_BYTE,ptex->locpx);
 			glBindTexture(GL_TEXTURE_2D,primTex?(((glTexture*)primTex)->name):0);
 		}
 	}
@@ -588,7 +581,7 @@ DWORD* SMELT_IMPL::decodeImage(BYTE *data,const char *fn,DWORD size,int &w,int &
 		w=img.GetWidth();h=img.GetHeight();
 		px=new DWORD[w*h];
 		BYTE *sptr=(BYTE*)px;
-		bool atunnel=img.AlphaIsValid();
+		bool achannel=img.AlphaIsValid();
 		for(int i=0;i<h;++i)
 		for(int j=0;j<w;++j)
 		{
@@ -596,7 +589,7 @@ DWORD* SMELT_IMPL::decodeImage(BYTE *data,const char *fn,DWORD size,int &w,int &
 			*(sptr++)=rgb.rgbRed;
 			*(sptr++)=rgb.rgbGreen;
 			*(sptr++)=rgb.rgbBlue;
-			*(sptr++)=atunnel?rgb.rgbReserved:0xFF;
+			*(sptr++)=achannel?rgb.rgbReserved:0xFF;
 		}
 	}
 	return px;
@@ -748,7 +741,7 @@ void SMELT_IMPL::batchOGL(bool endScene)
 {
 	if(vertexArray&&primcnt)
 	{
-		float twm=1.,thm=1.;
+		float twm=-1.,thm=-1.;
 		if(primTex)
 		{
 			glTexture *ptex=(glTexture*)primTex;
@@ -767,22 +760,15 @@ void SMELT_IMPL::batchOGL(bool endScene)
 				vertexArray[i].z=-vertexArray[i].z;
 			}
 		}
+		if(twm>0&&thm>0)
 		for(int i=0;i<primcnt*primType;++i)
 		{
 			vertexArray[i].tx*=twm;
 			vertexArray[i].ty*=thm;
-			DWORD color=vertexArray[i].col;
-			BYTE *col=(BYTE*)&vertexArray[i].col;
-			BYTE a=((color>>24)&0xFF);
-			BYTE r=((color>>16)&0xFF);
-			BYTE g=((color>> 8)&0xFF);
-			BYTE b=((color>> 0)&0xFF);
-			col[0]=r;col[1]=g;
-			col[2]=b;col[3]=a;
 		}
 		glBindVertexArray(VertexArrayObject);
 		glBindBuffer(GL_ARRAY_BUFFER,VertexBufferObject);
-		glBufferData(GL_ARRAY_BUFFER,sizeof(smVertex)*primcnt*primType,vertexBuf,GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER,sizeof(smVertex)*primcnt*primType,vertexBuf,GL_DYNAMIC_DRAW);
 		switch(primType)
 		{
 			case PRIM_LINES:
@@ -1004,9 +990,9 @@ bool SMELT_IMPL::confOGL()
 	glGenBuffers(1,&IndexBufferObject);
 	glBindVertexArray(VertexArrayObject);
 	glBindBuffer(GL_ARRAY_BUFFER,VertexBufferObject);
-	glBufferData(GL_ARRAY_BUFFER,sizeof(smVertex)*VERTEX_BUFFER_SIZE,vertexBuf,GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER,sizeof(smVertex)*VERTEX_BUFFER_SIZE,vertexBuf,GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,IndexBufferObject);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(GLushort)*((VERTEX_BUFFER_SIZE*6)/4),indexBuf,GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(GLushort)*((VERTEX_BUFFER_SIZE*6)/4),indexBuf,GL_DYNAMIC_DRAW);
 	glVertexAttribPointer(0,3,GL_FLOAT,0,sizeof(smVertex),(void*)offsetof(smVertex,x));//vp
 	glVertexAttribPointer(1,4,GL_UNSIGNED_BYTE,1,sizeof(smVertex),(void*)offsetof(smVertex,col));//vc
 	glVertexAttribPointer(2,2,GL_FLOAT,0,sizeof(smVertex),(void*)offsetof(smVertex,tx));//vtc
