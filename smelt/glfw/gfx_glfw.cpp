@@ -2,7 +2,7 @@
 /*
  * Simple MultimEdia LiTerator(SMELT)
  * by Chris Xiong 2015
- * GFX implementation based on GLFW/OpenGL 2.1
+ * GFX implementation based on GLFW/OpenGL 3.2+
  *
  * WARNING: This library is in development and interfaces would be very
  * unstable.
@@ -11,7 +11,35 @@
 #include "smelt_internal.hpp"
 #include "CxImage/ximage.h"
 #define dbg printf("%d: 0x%X\n",__LINE__,glGetError())
+#ifndef USE_OPENGL_COMPATIBILITY_PROFILE
+#include "smmath_priv.hpp"
 static const char* GFX_GLFW_SRCFN="smelt/glfw/gfx_glfw.cpp";
+static const char* fixedfunc_pipeline_vsh=
+	"#version 330 core\n"
+	"layout (location=0) in vec3 vp;"
+	"layout (location=1) in vec4 vc;"
+	"layout (location=2) in vec2 vtc;"
+	"out vec4 fc;"
+	"out vec2 ftc;"
+	"uniform mat4 mmodv;"
+	"uniform mat4 mproj;"
+	"void main(){"
+		"gl_Position=mproj*mmodv*vec4(vp,1.0f);"
+		"ftc=vec2(vtc.x,1.0f-vtc.y);"
+		"fc.rgba=vc.bgra;"
+	"}"
+;
+static const char* fixedfunc_pipeline_fsh=
+	"#version 330 core\n"
+	"in vec4 fc;"
+	"in vec2 ftc;"
+	"out vec4 color;"
+	"uniform sampler2D tex;"
+	"void main(){"
+		"color=fc*texture(tex,ftc);"
+		"if(color.a<1./256.)discard;"
+	"}"
+;
 struct glTexture
 {
 	GLuint name,rw,rh,dw,dh;
@@ -25,8 +53,7 @@ bool SMELT_IMPL::smRenderBegin2D(bool ztest,SMTRG trg)
 	TRenderTargetList *targ=(TRenderTargetList*)trg;
 	if(vertexArray)
 	{smLog("%s:" SLINE ": Last frame not closed.\n",GFX_GLFW_SRCFN);return false;}
-	if(pOpenGLDevice->have_GL_EXT_framebuffer_object)
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,(targ)?targ->frame:0);
+	glBindFramebuffer(GL_FRAMEBUFFER,(targ)?targ->frame:0);
 	glDepthFunc(GL_GEQUAL);
 	ztest?glEnable(GL_DEPTH_TEST):glDisable(GL_DEPTH_TEST);
 	zbufenabled=ztest;
@@ -52,8 +79,7 @@ bool SMELT_IMPL::smRenderBegin3D(float fov,bool ztest,SMTRG trg)
 	TRenderTargetList *targ=(TRenderTargetList*)trg;
 	if(vertexArray)
 	{smLog("%s:" SLINE ": Last frame not closed.\n",GFX_GLFW_SRCFN);return false;}
-	if(pOpenGLDevice->have_GL_EXT_framebuffer_object)
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,(targ)?targ->frame:0);
+	glBindFramebuffer(GL_FRAMEBUFFER,(targ)?targ->frame:0);
 	glDepthFunc(GL_LESS);
 	ztest?glEnable(GL_DEPTH_TEST):glDisable(GL_DEPTH_TEST);
 	zbufenabled=ztest;
@@ -77,20 +103,6 @@ bool SMELT_IMPL::smRenderBegin3D(float fov,bool ztest,SMTRG trg)
 bool SMELT_IMPL::smRenderEnd()
 {
 	batchOGL(true);
-	if(curTarget&&!pOpenGLDevice->have_GL_EXT_framebuffer_object)
-	{
-		glTexture *pTex=(glTexture*)curTarget->tex;
-		if(pTex&&pTex->lost)
-		configTexture(pTex,pTex->rw,pTex->rh,pTex->px);
-		int w=curTarget->w,h=curTarget->h;
-		glFinish();
-		DWORD *px=new DWORD[w*h];
-		glReadPixels(0,0,w,h,GL_RGBA,GL_UNSIGNED_BYTE,px);
-		glBindTexture(pOpenGLDevice->TextureTarget,pTex->name);
-		glTexSubImage2D(pOpenGLDevice->TextureTarget,0,0,0,w,h,GL_RGBA,GL_UNSIGNED_BYTE,px);
-		glBindTexture(pOpenGLDevice->TextureTarget,primTex?(((glTexture*)primTex)->name):0);
-		delete[] px;
-	}
 	if(curTarget&&curTarget->ms)
 	{
 		glTexture *pTex=(glTexture*)curTarget->tex;
@@ -99,14 +111,14 @@ bool SMELT_IMPL::smRenderEnd()
 		int w=curTarget->w,h=curTarget->h;
 		glFinish();
 		DWORD *px=new DWORD[w*h];
-		glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT,curTarget->frame);
-		glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT,curTarget->sframe);
-		glBlitFramebufferEXT(0,0,w,h,0,0,w,h,GL_COLOR_BUFFER_BIT,GL_NEAREST);
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,curTarget->sframe);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER,curTarget->frame);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER,curTarget->sframe);
+		glBlitFramebuffer(0,0,w,h,0,0,w,h,GL_COLOR_BUFFER_BIT,GL_NEAREST);
+		glBindFramebuffer(GL_FRAMEBUFFER,curTarget->sframe);
 		glReadPixels(0,0,w,h,GL_RGBA,GL_UNSIGNED_BYTE,px);
-		glBindTexture(pOpenGLDevice->TextureTarget,pTex->name);
-		glTexSubImage2D(pOpenGLDevice->TextureTarget,0,0,0,w,h,GL_RGBA,GL_UNSIGNED_BYTE,px);
-		glBindTexture(pOpenGLDevice->TextureTarget,primTex?(((glTexture*)primTex)->name):0);
+		glBindTexture(GL_TEXTURE_2D,pTex->name);
+		glTexSubImage2D(GL_TEXTURE_2D,0,0,0,w,h,GL_RGBA,GL_UNSIGNED_BYTE,px);
+		glBindTexture(GL_TEXTURE_2D,primTex?(((glTexture*)primTex)->name):0);
 		delete[] px;
 	}
 	if(!curTarget)glfwSwapBuffers((GLFWwindow*)hwnd);
@@ -127,28 +139,37 @@ void SMELT_IMPL::smClrscr(DWORD color,bool clearcol,bool cleardep)
 void SMELT_IMPL::sm3DCamera6f2v(float *pos,float *rot)
 {
 	batchOGL();
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	if(!pos||!rot)return;
-	glRotatef((GLfloat)-rot[0],1,0,0);
-	glRotatef((GLfloat)-rot[1],0,1,0);
-	glRotatef((GLfloat)-rot[2],0,0,1);
-	glTranslatef((GLfloat)-pos[0],(GLfloat)-pos[1],(GLfloat)-pos[2]);
+	_smMatrix Mmodv;
+	Mmodv.loadIdentity();
+	if(pos&&rot)
+	{
+		Mmodv.rotate(_smMath::deg2rad(-rot[0]),1,0,0);
+		Mmodv.rotate(_smMath::deg2rad(-rot[1]),0,1,0);
+		Mmodv.rotate(_smMath::deg2rad(-rot[2]),0,0,1);
+		Mmodv.translate(-pos[0],-pos[1],-pos[2]);
+	}
+	memcpy(mmodv,Mmodv.m,sizeof(mmodv));
+	glUniformMatrix4fv(loc_mmodv,1,0,mmodv);
 }
 void SMELT_IMPL::smMultViewMatrix(float *mat)
 {
-	glMatrixMode(GL_MODELVIEW);
-	glMultMatrixf(mat);
+	_smMatrix Mmodv(mmodv);
+	Mmodv=Mmodv*_smMatrix(mat);
+	memcpy(mmodv,Mmodv.m,sizeof(mmodv));
 }
 void SMELT_IMPL::sm2DCamera5f3v(float *pos,float *dpos,float *rot)
 {
 	batchOGL();
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	if(!pos||!dpos||!rot)return;
-	glTranslatef(-pos[0],-pos[1],0.0f);
-	glRotatef(*rot,0.0f,0.0f,1.0f);
-	glTranslatef(pos[0]+dpos[0],pos[1]+dpos[1],0.0f);
+	_smMatrix Mmodv;
+	Mmodv.loadIdentity();
+	if(pos&&dpos&&rot)
+	{
+		Mmodv.translate(-pos[0],-pos[1],.0f);
+		Mmodv.rotate(*rot,.0f,.0f,1.0f);
+		Mmodv.translate(pos[0]+dpos[0],pos[1]+dpos[1],.0f);
+	}
+	memcpy(mmodv,Mmodv.m,sizeof(mmodv));
+	glUniformMatrix4fv(loc_mmodv,1,0,mmodv);
 }
 void SMELT_IMPL::smRenderLinefd(float x1,float y1,float z1,float x2,float y2,float z2,DWORD color)
 {
@@ -241,28 +262,12 @@ void SMELT_IMPL::smDrawCustomIndexedVertices(smVertex* vb,WORD* ib,int vbc,int i
 	if(vertexArray)
 	{
 		batchOGL();
-		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER,0);
-		glVertexPointer(3,GL_FLOAT,sizeof(smVertex),&vb[0].x);
-		glColorPointer(4,GL_UNSIGNED_BYTE,sizeof(smVertex),&vb[0].col);
-		glTexCoordPointer(2,GL_FLOAT,sizeof(smVertex),&vb[0].tx);
 
-		float twm=1.,thm=1.;
+		float twm=-1.,thm=-1.;
 		if(texture)
 		{
-			if(filtermode==TFLT_NEAREST)
-			{
-				glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-				glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-			}
-			if(filtermode==TFLT_LINEAR)
-			{
-				glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-				glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-			}
 			glTexture *ptex=(glTexture*)texture;
-			if(pOpenGLDevice->TextureTarget==GL_TEXTURE_RECTANGLE_ARB)
-			{twm=ptex->rw;thm=ptex->rh;}
-			else if(ptex->dw&&ptex->dh)
+			if(ptex->dw&&ptex->dh)
 			{
 				twm=(ptex->rw)/(float)(ptex->dw);
 				thm=(ptex->rh)/(float)(ptex->dh);
@@ -277,27 +282,25 @@ void SMELT_IMPL::smDrawCustomIndexedVertices(smVertex* vb,WORD* ib,int vbc,int i
 				vertexArray[i].z=-vertexArray[i].z;
 			}
 		}
+		if(twm>0&&thm>0)
 		for(int i=0;i<vbc;++i)
 		{
 			vb[i].tx*=twm;
-			vb[i].ty=(1.-vb[i].ty)*thm;
-			DWORD color=vb[i].col;
-			BYTE *col=(BYTE*)&vb[i].col;
-			BYTE a=((color>>24)&0xFF);
-			BYTE r=((color>>16)&0xFF);
-			BYTE g=((color>> 8)&0xFF);
-			BYTE b=((color>> 0)&0xFF);
-			col[0]=r;col[1]=g;
-			col[2]=b;col[3]=a;
+			vb[i].ty*=thm;
 		}
 		if(texture!=primTex)bindTexture((glTexture*)texture);
 		if(blend!=primBlend)setBlend(blend);
-		glDrawElements(GL_TRIANGLES,ibc,GL_UNSIGNED_SHORT,ib);
+		glBindVertexArray(VertexArrayObject);
+		glBindBuffer(GL_ARRAY_BUFFER,VertexBufferObject);
+		glBufferData(GL_ARRAY_BUFFER,sizeof(smVertex)*vbc,vb,GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,IndexBufferObject);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(GLushort)*ibc,ib,GL_DYNAMIC_DRAW);
+		glDrawElements(GL_TRIANGLES,ibc,GL_UNSIGNED_SHORT,0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,IndexBufferObject);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(GLushort)*((VERTEX_BUFFER_SIZE*6)/4),indexBuf,GL_DYNAMIC_DRAW);
+		glBindVertexArray(0);
+		if(texture!=primTex)bindTexture((glTexture*)primTex);
 
-		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER,IndexBufferObject);
-		glVertexPointer(3,GL_FLOAT,sizeof(smVertex),&vertexBuf[0].x);
-		glColorPointer(4,GL_UNSIGNED_BYTE,sizeof(smVertex),&vertexBuf[0].col);
-		glTexCoordPointer(2,GL_FLOAT,sizeof(smVertex),&vertexBuf[0].tx);
 	}
 }
 SMTRG SMELT_IMPL::smTargetCreate(int w,int h,int ms)
@@ -336,20 +339,17 @@ void SMELT_IMPL::smTargetFree(SMTRG targ)
 		{
 			if(pLastTarg)pLastTarg->next=pTarget->next;
 			else targets=pTarget->next;
-			if(pOpenGLDevice->have_GL_EXT_framebuffer_object)
+			if(curTarget==(TRenderTargetList*)targ)
+			glBindFramebuffer(GL_FRAMEBUFFER_EXT,0);
+			if(pTarget->depth)
+			glDeleteRenderbuffers(1,&pTarget->depth);
+			glDeleteFramebuffers(1,&pTarget->frame);
+			if(pTarget->ms)
 			{
-				if(curTarget==(TRenderTargetList*)targ)
-				glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
-				if(pTarget->depth)
-				glDeleteRenderbuffersEXT(1,&pTarget->depth);
-				glDeleteFramebuffersEXT(1,&pTarget->frame);
-				if(pTarget->ms)
-				{
-					glDeleteRenderbuffersEXT(1,&pTarget->colorms);
-					glDeleteRenderbuffersEXT(1,&pTarget->scolor);
-					glDeleteRenderbuffersEXT(1,&pTarget->sdepth);
-					glDeleteFramebuffersEXT(1,&pTarget->sframe);
-				}
+				glDeleteRenderbuffers(1,&pTarget->colorms);
+				glDeleteRenderbuffers(1,&pTarget->scolor);
+				glDeleteRenderbuffers(1,&pTarget->sdepth);
+				glDeleteFramebuffers(1,&pTarget->sframe);
 			}
 			if(curTarget==(TRenderTargetList*)targ)curTarget=0;
 			smTextureFree(pTarget->tex);
@@ -428,7 +428,9 @@ void SMELT_IMPL::smTextureFree(SMTEX tex)
 	if(tex)
 	{
 		glTexture *ptex=(glTexture*)tex;
-		delete[] ptex->fn;delete[] ptex->locpx;delete[] ptex->px;
+		delete[] ptex->fn;
+		delete[] ptex->locpx;
+		delete[] ptex->px;
 		glDeleteTextures(1,&ptex->name);
 		delete ptex;
 	}
@@ -438,38 +440,26 @@ void SMELT_IMPL::smTextureOpt(int potopt,int filter)
 	batchOGL();
 	if(potopt==TPOT_NONPOT)
 	{
-		if(pOpenGLDevice->have_GL_ARB_texture_rectangle)
-		pOpenGLDevice->TextureTarget=GL_TEXTURE_RECTANGLE_ARB;
-		else if(pOpenGLDevice->have_GL_ARB_texture_non_power_of_two)
-		pOpenGLDevice->TextureTarget=GL_TEXTURE_2D;
-		else pOpenGLDevice->TextureTarget=GL_TEXTURE_2D;
-		glDisable(GL_TEXTURE_2D);
-		if(pOpenGLDevice->have_GL_ARB_texture_rectangle)glDisable(GL_TEXTURE_RECTANGLE_ARB);
-		glEnable(pOpenGLDevice->TextureTarget);
-		glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-		glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-		glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
 	}
 	if(potopt==TPOT_POT)
 	{
-		pOpenGLDevice->TextureTarget=GL_TEXTURE_2D;
-		glDisable(GL_TEXTURE_2D);
-		if(pOpenGLDevice->have_GL_ARB_texture_rectangle)glDisable(GL_TEXTURE_RECTANGLE_ARB);
-		glEnable(pOpenGLDevice->TextureTarget);
-		glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_WRAP_S,GL_REPEAT);
-		glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_WRAP_T,GL_REPEAT);
-		glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_WRAP_R,GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_R,GL_REPEAT);
 	}
 	filtermode=filter;
 	if(filter==TFLT_NEAREST)
 	{
-		glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-		glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 	}
 	if(filter==TFLT_LINEAR)
 	{
-		glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-		glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	}
 }
 int SMELT_IMPL::smTextureGetWidth(SMTEX tex,bool original)
@@ -548,11 +538,11 @@ void SMELT_IMPL::smTexutreUnlock(SMTEX tex)
 		if(ptex->lost)configTexture(ptex,ptex->rw,ptex->rh,ptex->px);
 		else
 		{
-			glBindTexture(pOpenGLDevice->TextureTarget,ptex->name);
-			glTexSubImage2D(pOpenGLDevice->TextureTarget,0,ptex->locx,
-										  (ptex->rh-ptex->locy)-ptex->loch,ptex->locw,ptex->loch,GL_RGBA,
-										  GL_UNSIGNED_BYTE,ptex->locpx);
-			glBindTexture(pOpenGLDevice->TextureTarget,primTex?(((glTexture*)primTex)->name):0);
+			glBindTexture(GL_TEXTURE_2D,ptex->name);
+			glTexSubImage2D(GL_TEXTURE_2D,0,ptex->locx,
+							(ptex->rh-ptex->locy)-ptex->loch,ptex->locw,ptex->loch,GL_RGBA,
+							GL_UNSIGNED_BYTE,ptex->locpx);
+			glBindTexture(GL_TEXTURE_2D,primTex?(((glTexture*)primTex)->name):0);
 		}
 	}
 	if(ptex->fn&&ptex->roloc){delete[] ptex->px;ptex->px=NULL;}
@@ -592,7 +582,7 @@ DWORD* SMELT_IMPL::decodeImage(BYTE *data,const char *fn,DWORD size,int &w,int &
 		w=img.GetWidth();h=img.GetHeight();
 		px=new DWORD[w*h];
 		BYTE *sptr=(BYTE*)px;
-		bool atunnel=img.AlphaIsValid();
+		bool achannel=img.AlphaIsValid();
 		for(int i=0;i<h;++i)
 		for(int j=0;j<w;++j)
 		{
@@ -600,7 +590,7 @@ DWORD* SMELT_IMPL::decodeImage(BYTE *data,const char *fn,DWORD size,int &w,int &
 			*(sptr++)=rgb.rgbRed;
 			*(sptr++)=rgb.rgbGreen;
 			*(sptr++)=rgb.rgbBlue;
-			*(sptr++)=atunnel?rgb.rgbReserved:0xFF;
+			*(sptr++)=achannel?rgb.rgbReserved:0xFF;
 		}
 	}
 	return px;
@@ -611,7 +601,8 @@ void SMELT_IMPL::bindTexture(glTexture *t)
 	configTexture(t,t->rw,t->rh,t->px);
 	if(((SMTEX)t)!=primTex)
 	{
-		glBindTexture(pOpenGLDevice->TextureTarget,t?t->name:0);
+		glBindTexture(GL_TEXTURE_2D,t?t->name:((glTexture*)emptyTex)->name);
+		glUniform1i(loc_tex,0);
 		primTex=(SMTEX)t;
 	}
 }
@@ -620,75 +611,67 @@ bool SMELT_IMPL::buildTarget(TRenderTargetList *pTarget,GLuint texid,int w,int h
 	bool ok=true;
 	if(ms)
 	{
-		if(!pOpenGLDevice->have_GL_EXT_framebuffer_object||
-		!pOpenGLDevice->have_GL_EXT_framebuffer_multisample||
-		!pOpenGLDevice->have_GL_EXT_framebuffer_blit)
-			ms=0;
+		glGenFramebuffers(1,&pTarget->sframe);
+		glBindFramebuffer(GL_FRAMEBUFFER,pTarget->sframe);
+		glGenRenderbuffers(1,&pTarget->scolor);
+		glBindRenderbuffer(GL_RENDERBUFFER,pTarget->scolor);
+		glRenderbufferStorage(GL_RENDERBUFFER,GL_RGBA,w,h);
+		glGenRenderbuffers(1,&pTarget->sdepth);
+		glBindRenderbuffer(GL_RENDERBUFFER,pTarget->sdepth);
+		glRenderbufferStorage(GL_RENDERBUFFER,GL_DEPTH_COMPONENT24,w,h);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_RENDERBUFFER,pTarget->scolor);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,pTarget->sdepth);
+
+		glGenFramebuffers(1,&pTarget->frame);
+		glBindFramebuffer(GL_FRAMEBUFFER,pTarget->frame);
+		glGenRenderbuffers(1,&pTarget->colorms);
+		glBindRenderbuffer(GL_RENDERBUFFER,pTarget->colorms);
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER,ms,GL_RGBA,w,h);
+		glGenRenderbuffers(1,&pTarget->depth);
+		glBindRenderbuffer(GL_RENDERBUFFER,pTarget->depth);
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER,ms,GL_DEPTH_COMPONENT24,w,h);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_RENDERBUFFER,pTarget->colorms);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,pTarget->depth);
+		GLenum rc=glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if((rc==GL_FRAMEBUFFER_COMPLETE)&&(glGetError()==GL_NO_ERROR))
+		{
+			glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+			ok=true;pTarget->ms=ms;
+		}
 		else
 		{
-			glGenFramebuffersEXT(1,&pTarget->sframe);
-			glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,pTarget->sframe);
-			glGenRenderbuffersEXT(1,&pTarget->scolor);
-			glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,pTarget->scolor);
-			glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT,GL_RGBA,w,h);
-			glGenRenderbuffersEXT(1,&pTarget->sdepth);
-			glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,pTarget->sdepth);
-			glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT,GL_DEPTH_COMPONENT24,w,h);
-			glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT,GL_RENDERBUFFER_EXT,pTarget->scolor);
-			glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT,pTarget->sdepth);
-
-			glGenFramebuffersEXT(1,&pTarget->frame);
-			glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,pTarget->frame);
-			glGenRenderbuffersEXT(1,&pTarget->colorms);
-			glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,pTarget->colorms);
-			glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT,ms,GL_RGBA,w,h);
-			glGenRenderbuffersEXT(1,&pTarget->depth);
-			glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,pTarget->depth);
-			glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT,ms,GL_DEPTH_COMPONENT24,w,h);
-			glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT,GL_RENDERBUFFER_EXT,pTarget->colorms);
-			glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT,pTarget->depth);
-			GLenum rc=glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-			if((rc==GL_FRAMEBUFFER_COMPLETE_EXT)&&(glGetError()==GL_NO_ERROR))
-			{
-				glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-				ok=true;pTarget->ms=ms;
-			}
-			else
-			{
-				glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
-				glDeleteRenderbuffersEXT(1,&pTarget->colorms);
-				glDeleteRenderbuffersEXT(1,&pTarget->depth);
-				glDeleteFramebuffersEXT(1,&pTarget->frame);
-				glDeleteFramebuffersEXT(1,&pTarget->sframe);
-				ok=false;ms=0;
-			}
-			glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,curTarget?curTarget->frame:0);
+			glBindFramebuffer(GL_FRAMEBUFFER,0);
+			glDeleteRenderbuffers(1,&pTarget->colorms);
+			glDeleteRenderbuffers(1,&pTarget->depth);
+			glDeleteFramebuffers(1,&pTarget->frame);
+			glDeleteFramebuffers(1,&pTarget->sframe);
+			ok=false;ms=0;
 		}
+		glBindFramebuffer(GL_FRAMEBUFFER,curTarget?curTarget->frame:0);
 	}
 	if(!ms)
-	if(pOpenGLDevice->have_GL_EXT_framebuffer_object)
 	{
-		glGenFramebuffersEXT(1,&pTarget->frame);
-		glGenRenderbuffersEXT(1,&pTarget->depth);
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,pTarget->frame);
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT,pOpenGLDevice->TextureTarget,texid,0);
-		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT,pTarget->depth);
-		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT,GL_DEPTH_COMPONENT24,w,h);
-		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT,pTarget->depth);
-		GLenum rc=glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-		if((rc==GL_FRAMEBUFFER_COMPLETE_EXT)&&(glGetError()==GL_NO_ERROR))
+		glGenFramebuffers(1,&pTarget->frame);
+		glGenRenderbuffers(1,&pTarget->depth);
+		glBindFramebuffer(GL_FRAMEBUFFER,pTarget->frame);
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,texid,0);
+		glBindRenderbuffer(GL_RENDERBUFFER,pTarget->depth);
+		glRenderbufferStorage(GL_RENDERBUFFER,GL_DEPTH_COMPONENT24,w,h);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,pTarget->depth);
+		GLenum rc=glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if((rc==GL_FRAMEBUFFER_COMPLETE)&&(glGetError()==GL_NO_ERROR))
 		{
 			glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 			ok=true;pTarget->ms=0;
 		}
 		else
 		{
-			glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
-			glDeleteRenderbuffersEXT(1,&pTarget->depth);
-			glDeleteFramebuffersEXT(1,&pTarget->frame);
+			glBindFramebuffer(GL_FRAMEBUFFER,0);
+			glDeleteRenderbuffers(1,&pTarget->depth);
+			glDeleteFramebuffers(1,&pTarget->frame);
 			ok=false;
 		}
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,curTarget?curTarget->frame:0);
+		glBindFramebuffer(GL_FRAMEBUFFER,curTarget?curTarget->frame:0);
 	}
 	return ok;
 }
@@ -715,28 +698,16 @@ void SMELT_IMPL::configTexture(glTexture *t,int w,int h,DWORD *px,bool compresse
 		free(buff);
 		fclose(pFile);
 	}
-	glBindTexture(pOpenGLDevice->TextureTarget,tex);
-	if(pOpenGLDevice->TextureTarget!=GL_TEXTURE_RECTANGLE_ARB)
-	{
-		glTexParameterf(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_LOD,0.0f);
-		glTexParameterf(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAX_LOD,0.0f);
-		glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_BASE_LEVEL,0);
-		glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAX_LEVEL,0);
-	}
-	const GLenum fmt=pOpenGLDevice->have_GL_EXT_texture_compression_s3tc&&compressed?/*GL_COMPRESSED_RGBA_S3TC_DXT5_EXT*/GL_COMPRESSED_RGBA_ARB:GL_RGBA8;
-	if((pOpenGLDevice->have_GL_ARB_texture_rectangle)||(pOpenGLDevice->have_GL_ARB_texture_non_power_of_two)||(ispot(w)&&ispot(h)))
-	{
-		glTexImage2D(pOpenGLDevice->TextureTarget,0,fmt,w,h,0,GL_RGBA,GL_UNSIGNED_BYTE,px);
-	}
-	else
-	{
-		t->dw=npot(w);
-		t->dh=npot(h);
-		glTexImage2D(pOpenGLDevice->TextureTarget,0,fmt,t->dw,t->dh,0,GL_RGBA,GL_UNSIGNED_BYTE,NULL);
-		glTexSubImage2D(pOpenGLDevice->TextureTarget,0,0,0,w,h,GL_RGBA,GL_UNSIGNED_BYTE,px);
-	}
-	glBindTexture(pOpenGLDevice->TextureTarget,primTex?(((glTexture*)primTex)->name):0);
-	if (fromfile)delete[] px;
+	glBindTexture(GL_TEXTURE_2D,tex);
+	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_LOD,0.0f);
+	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAX_LOD,0.0f);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_BASE_LEVEL,0);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,0);
+	compressed=false;//compression is unusable at this moment
+	const GLenum fmt=compressed?/*GL_COMPRESSED_RGBA_S3TC_DXT5_EXT*/GL_COMPRESSED_RGBA_ARB:GL_RGBA8;
+	glTexImage2D(GL_TEXTURE_2D,0,fmt,w,h,0,GL_RGBA,GL_UNSIGNED_BYTE,px);
+	glBindTexture(GL_TEXTURE_2D,primTex?(((glTexture*)primTex)->name):0);
+	if(fromfile)delete[] px;
 }
 SMTEX SMELT_IMPL::buildTexture(int w,int h,DWORD *px)
 {
@@ -748,45 +719,34 @@ SMTEX SMELT_IMPL::buildTexture(int w,int h,DWORD *px)
 }
 void SMELT_IMPL::configProjectionMatrix2D(int w,int h)
 {
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0,(float)w,0,(float)h,0.0f,1.0f);
+	memset(mproj,0,sizeof(mproj));
+	mproj[0]=2./w;
+	mproj[5]=2./h;
+	mproj[10]=-2.;
+	mproj[15]=1.;
+	mproj[12]=mproj[13]=mproj[14]=-1.;
+	glUniformMatrix4fv(loc_mproj,1,0,mproj);
 }
 void SMELT_IMPL::configProjectionMatrix3D(int w,int h,float fov)
 {
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
-	GLfloat matrix[16]={0.0f};
+	memset(mproj,0,sizeof(mproj));
 	float f=1./tanf(M_PI*fov/360.);
 	float ar=(float)w/(float)h;
 	float Near=0.1,Far=1000.;
-	matrix[0]=f/ar;matrix[5]=f;
-	matrix[10]=(Far+Near)/(Near-Far);matrix[11]=-1.0f;
-	matrix[14]=(2*Far*Near)/(Near-Far);
-	glMultMatrixf(matrix);
+	mproj[0]=f/ar;mproj[5]=f;
+	mproj[10]=(Far+Near)/(Near-Far);mproj[11]=-1.0f;
+	mproj[14]=(2*Far*Near)/(Near-Far);
+	glUniformMatrix4fv(loc_mproj,1,0,mproj);
 }
 void SMELT_IMPL::batchOGL(bool endScene)
 {
 	if(vertexArray&&primcnt)
 	{
-		float twm=1.,thm=1.;
+		float twm=-1.,thm=-1.;
 		if(primTex)
 		{
-			if(filtermode==TFLT_NEAREST)
-			{
-				glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-				glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-			}
-			if(filtermode==TFLT_LINEAR)
-			{
-				glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-				glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-			}
 			glTexture *ptex=(glTexture*)primTex;
-			if(pOpenGLDevice->TextureTarget==GL_TEXTURE_RECTANGLE_ARB)
-			{twm=ptex->rw;thm=ptex->rh;}
-			else if(ptex->dw&&ptex->dh)
+			if(ptex->dw&&ptex->dh)
 			{
 				twm=(ptex->rw)/(float)(ptex->dw);
 				thm=(ptex->rh)/(float)(ptex->dh);
@@ -801,19 +761,15 @@ void SMELT_IMPL::batchOGL(bool endScene)
 				vertexArray[i].z=-vertexArray[i].z;
 			}
 		}
+		if(twm>0&&thm>0)
 		for(int i=0;i<primcnt*primType;++i)
 		{
 			vertexArray[i].tx*=twm;
-			vertexArray[i].ty=(1.-vertexArray[i].ty)*thm;
-			DWORD color=vertexArray[i].col;
-			BYTE *col=(BYTE*)&vertexArray[i].col;
-			BYTE a=((color>>24)&0xFF);
-			BYTE r=((color>>16)&0xFF);
-			BYTE g=((color>> 8)&0xFF);
-			BYTE b=((color>> 0)&0xFF);
-			col[0]=r;col[1]=g;
-			col[2]=b;col[3]=a;
+			vertexArray[i].ty*=thm;
 		}
+		glBindVertexArray(VertexArrayObject);
+		glBindBuffer(GL_ARRAY_BUFFER,VertexBufferObject);
+		glBufferData(GL_ARRAY_BUFFER,sizeof(smVertex)*primcnt*primType,vertexBuf,GL_DYNAMIC_DRAW);
 		switch(primType)
 		{
 			case PRIM_LINES:
@@ -823,7 +779,7 @@ void SMELT_IMPL::batchOGL(bool endScene)
 				glDrawArrays(GL_TRIANGLES,0,3*primcnt);
 			break;
 			case PRIM_QUADS:
-				glDrawElements(GL_TRIANGLES,6*primcnt,GL_UNSIGNED_SHORT,pOpenGLDevice->have_GL_ARB_vertex_buffer_object?0:indexBuf);
+				glDrawElements(GL_TRIANGLES,6*primcnt,GL_UNSIGNED_SHORT,0);
 #if 0
 				for (int i=0;i<primcnt*6;i+=3)
 				{
@@ -838,6 +794,7 @@ void SMELT_IMPL::batchOGL(bool endScene)
 #endif
 			break;
 		}
+		glBindVertexArray(0);
 		primcnt=0;
 	}
 	if(vertexArray)vertexArray=endScene?0:vertexBuf;
@@ -871,27 +828,27 @@ void SMELT_IMPL::unloadGLEntryPoints()
 }
 bool SMELT_IMPL::checkGLExtension(const char *extlist,const char *ext)
 {
+	return true;/*shit*
 	const char *ptr=strstr(extlist,ext);
 	if(ptr==NULL)return false;
 	const char endchar=ptr[strlen(ext)];
 	if((endchar=='\0')||(endchar==' '))return true;
-	return false;
+	return false;*/
 }
 bool SMELT_IMPL::loadGLEntryPoints()
 {
-	smLog("%s:" SLINE ": OpenGL: loading entry points and examining extensions...\n",GFX_GLFW_SRCFN);
+	smLog("%s:" SLINE ": Initializing with OpenGL core profile...\n",GFX_GLFW_SRCFN);
 	pOpenGLDevice->have_base_opengl=true;
-	pOpenGLDevice->have_GL_ARB_texture_rectangle=true;
-	pOpenGLDevice->have_GL_ARB_texture_non_power_of_two=true;
-	pOpenGLDevice->have_GL_EXT_framebuffer_object=true;
-	pOpenGLDevice->have_GL_EXT_texture_compression_s3tc=false;
-	pOpenGLDevice->have_GL_ARB_vertex_buffer_object=true;
-	pOpenGLDevice->have_GL_EXT_framebuffer_multisample=true;
-	pOpenGLDevice->have_GL_EXT_framebuffer_blit=true;
+	/*
+	 * All OpenGL features utilized by SMELT are in the core profile
+	 * for OpenGL >= 3.2. So this function is essentially useless.
+	 */
+	glewExperimental=true;
 	GLenum glewret=glewInit();
 	if(glewret)
 	{
 		smLog("%s:" SLINE ": glewInit() failed with error %s\n",GFX_GLFW_SRCFN,glewGetErrorString(glewret));
+		pOpenGLDevice->have_base_opengl=false;
 		return false;
 	}
 	if (!pOpenGLDevice->have_base_opengl)
@@ -905,81 +862,25 @@ bool SMELT_IMPL::loadGLEntryPoints()
 	const char *verstr=(const char*)glGetString(GL_VERSION);
 	int maj=0,min=0;
 	sscanf(verstr,"%d.%d",&maj,&min);
-	if((maj<1)||((maj==1)&&(min<2)))
+	if((maj<3)||((maj==3)&&(min<2)))
 	{
-		smLog("%s:" SLINE ": OpenGL implementation must be at least version 1.2.\n",GFX_GLFW_SRCFN);
+		smLog("%s:" SLINE ": OpenGL implementation must be at least version 3.2.\n",GFX_GLFW_SRCFN);
 		unloadGLEntryPoints();
 		return false;
 	}
-	const char *exts=(const char*)glGetString(GL_EXTENSIONS);
-	pOpenGLDevice->have_GL_ARB_texture_rectangle=
-		checkGLExtension(exts,"GL_ARB_texture_rectangle")||
-		checkGLExtension(exts,"GL_EXT_texture_rectangle")||
-		checkGLExtension(exts, "GL_NV_texture_rectangle");
-	pOpenGLDevice->have_GL_ARB_texture_non_power_of_two=
-		maj>=2||checkGLExtension(exts,"GL_ARB_texture_non_power_of_two");
-	if(pOpenGLDevice->have_GL_ARB_texture_rectangle)
-	{
-		smLog("%s:" SLINE ": OpenGL: Using GL_ARB_texture_rectangle.\n",GFX_GLFW_SRCFN);
-		pOpenGLDevice->TextureTarget=GL_TEXTURE_RECTANGLE_ARB;
-	}
-	else if(pOpenGLDevice->have_GL_ARB_texture_non_power_of_two)
-	{
-		smLog("%s:" SLINE ": OpenGL: Using GL_ARB_texture_non_power_of_two.\n",GFX_GLFW_SRCFN);
-		pOpenGLDevice->TextureTarget=GL_TEXTURE_2D;
-	}
-	else
-	{
-		smLog("%s:" SLINE ": OpenGL: Using power-of-two textures. This costs more memory!\n",GFX_GLFW_SRCFN);
-		pOpenGLDevice->TextureTarget=GL_TEXTURE_2D;
-	}
-	if(pOpenGLDevice->have_GL_EXT_framebuffer_object)
-		pOpenGLDevice->have_GL_EXT_framebuffer_object=
-		checkGLExtension(exts, "GL_EXT_framebuffer_object");
-	if(pOpenGLDevice->have_GL_EXT_framebuffer_object)
-		smLog("%s:" SLINE ": OpenGL: Using GL_EXT_framebuffer_object.\n",GFX_GLFW_SRCFN);
-	else
-		smLog("%s:" SLINE ": OpenGL: WARNING! No render-to-texture support. Things may render badly.\n",GFX_GLFW_SRCFN);
-	if(pOpenGLDevice->have_GL_EXT_texture_compression_s3tc)
-		pOpenGLDevice->have_GL_EXT_texture_compression_s3tc=
-		checkGLExtension(exts,"GL_ARB_texture_compression")&&
-	    checkGLExtension(exts,"GL_EXT_texture_compression_s3tc");
-	if(pOpenGLDevice->have_GL_EXT_texture_compression_s3tc)
-		smLog("%s:" SLINE ": OpenGL: Using GL_EXT_texture_compression_s3tc.\n",GFX_GLFW_SRCFN);
-	else if (true)
-	{
-		smLog("%s:" SLINE ": OpenGL: Texture compression disabled!\n",GFX_GLFW_SRCFN);
-	}
-	if(pOpenGLDevice->have_GL_ARB_vertex_buffer_object)
-	{
-		pOpenGLDevice->have_GL_ARB_vertex_buffer_object=
-		checkGLExtension(exts,"GL_ARB_vertex_buffer_object");
-	}
-	if(pOpenGLDevice->have_GL_ARB_vertex_buffer_object)
-		smLog("%s:" SLINE ": OpenGL: Using GL_ARB_vertex_buffer_object.\n",GFX_GLFW_SRCFN);
-	else
-		smLog("%s:" SLINE ": OpenGL: WARNING! No VBO support; performance may suffer.\n",GFX_GLFW_SRCFN);
-	pOpenGLDevice->have_GL_EXT_framebuffer_multisample=
-		checkGLExtension(exts,"GL_EXT_framebuffer_multisample");
-	pOpenGLDevice->have_GL_EXT_framebuffer_blit=
-		checkGLExtension(exts,"GL_EXT_framebuffer_blit");
-	if(!pOpenGLDevice->have_GL_EXT_framebuffer_multisample||!pOpenGLDevice->have_GL_EXT_framebuffer_blit)
-		smLog("%s:" SLINE ": Multisampling is not supported.\n",GFX_GLFW_SRCFN);
-	else
-		smLog("%s:" SLINE ": Multisampling is supported. Still experimental!\n",GFX_GLFW_SRCFN);
 	return true;
 }
 bool SMELT_IMPL::initOGL()
 {
-	primTex=0;
+	primTex=0;emptyTex=0;
 	if(pOpenGLDevice){smLog("%s:" SLINE ": Multiple initialization!\n",GFX_GLFW_SRCFN);return false;}
 	pOpenGLDevice=new TOpenGLDevice;
 	if(!loadGLEntryPoints())return false;
 	smLog("%s:" SLINE ": Mode: %d x %d\n",GFX_GLFW_SRCFN,scrw,scrh);
-	vertexArray=NULL;textures=NULL;IndexBufferObject=0;
+	vertexArray=NULL;textures=NULL;
+	ShaderProgram=vertshader=fragshader=0;
+	VertexBufferObject=VertexArrayObject=IndexBufferObject=0;
 	if(!confOGL())return false;
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	if(!curTarget)glfwSwapBuffers((GLFWwindow*)hwnd);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	if(!curTarget)glfwSwapBuffers((GLFWwindow*)hwnd);
 	return true;
@@ -993,15 +894,20 @@ void SMELT_IMPL::finiOGL()
 	delete[] indexBuf;indexBuf=NULL;
 	if(pOpenGLDevice)
 	{
-		if (pOpenGLDevice->have_GL_ARB_vertex_buffer_object)
+		if(VertexBufferObject!=0)
 		{
-			if (IndexBufferObject!=0)
-			{
-				glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER,0);
-				glDeleteBuffersARB(1,&IndexBufferObject);
-				IndexBufferObject=0;
-			}
+			glBindVertexArray(VertexArrayObject);
+			glBindBuffer(GL_ARRAY_BUFFER,0);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+			glDeleteBuffers(1,&VertexBufferObject);
+			glDeleteBuffers(1,&IndexBufferObject);
+			glBindVertexArray(0);
+			glDeleteVertexArrays(1,&VertexArrayObject);
+			VertexArrayObject=0;
+			VertexBufferObject=0;
+			IndexBufferObject=0;
 		}
+		glDeleteProgram(ShaderProgram);
 		delete pOpenGLDevice;
 		pOpenGLDevice=NULL;
 	}
@@ -1020,6 +926,10 @@ bool SMELT_IMPL::restOGL()
 bool SMELT_IMPL::confOGL()
 {
 	bindTexture(NULL);
+	DWORD ones=~0U;
+	if(!emptyTex)
+	{emptyTex=buildTexture(1,1,&ones);}
+	configTexture((glTexture*)emptyTex,1,1,&ones,false);
 	for(TTextureList *i=textures;i;i=i->next)
 	{
 		glTexture *t=(glTexture*)i->tex;
@@ -1033,6 +943,39 @@ bool SMELT_IMPL::confOGL()
 		buildTarget(target,tex?tex->name:0,target->w,target->h);
 		target=target->next;
 	}
+	int compret=0;
+	ShaderProgram=glCreateProgram();
+	vertshader=glCreateShader(GL_VERTEX_SHADER);
+	fragshader=glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(vertshader,1,&fixedfunc_pipeline_vsh,NULL);
+	glShaderSource(fragshader,1,&fixedfunc_pipeline_fsh,NULL);
+	glCompileShader(vertshader);
+	glGetShaderiv(vertshader,GL_COMPILE_STATUS,&compret);
+	//char log[1024];
+	//glGetShaderInfoLog(vertshader,1024,NULL,log);
+	//puts(log);
+	if(!compret)
+	smLog("%s:" SLINE ": Warning: Your shitty vertex shader failed to compile!\n",GFX_GLFW_SRCFN);
+	glCompileShader(fragshader);
+	glGetShaderiv(fragshader,GL_COMPILE_STATUS,&compret);
+	//glGetShaderInfoLog(fragshader,1024,NULL,log);
+	//puts(log);
+	if(!compret)
+	smLog("%s:" SLINE ": Warning: Your shitty fragment shader failed to compile!\n",GFX_GLFW_SRCFN);
+	glAttachShader(ShaderProgram,vertshader);
+	glAttachShader(ShaderProgram,fragshader);
+	glLinkProgram(ShaderProgram);
+	//glGetProgramInfoLog(ShaderProgram,1024,NULL,log);
+	//puts(log);
+	glGetProgramiv(ShaderProgram,GL_LINK_STATUS,&compret);
+	if(!compret)
+	smLog("%s:" SLINE ": Warning: Default shader linkage failure!\n",GFX_GLFW_SRCFN);
+	glDeleteShader(vertshader);
+	glDeleteShader(fragshader);
+	glUseProgram(ShaderProgram);
+	loc_tex=glGetUniformLocation(ShaderProgram,"tex");
+	loc_mmodv=glGetUniformLocation(ShaderProgram,"mmodv");
+	loc_mproj=glGetUniformLocation(ShaderProgram,"mproj");
 	vertexBuf=new smVertex[VERTEX_BUFFER_SIZE];
 	indexBuf=new GLushort[VERTEX_BUFFER_SIZE*6/4];
 	GLushort* indices=indexBuf;
@@ -1043,46 +986,47 @@ bool SMELT_IMPL::confOGL()
 		*indices++=n+3;*indices++=n;
 		n+=4;
 	}
-	if(pOpenGLDevice->have_GL_ARB_vertex_buffer_object)
-	{
-		glGenBuffersARB(1,&IndexBufferObject);
-		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER,IndexBufferObject);
-		glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER,sizeof(GLushort)*((VERTEX_BUFFER_SIZE*6)/4),indexBuf,GL_STATIC_DRAW);
-	}
-	glVertexPointer(3,GL_FLOAT,sizeof(smVertex),&vertexBuf[0].x);
-	glColorPointer(4,GL_UNSIGNED_BYTE,sizeof(smVertex),&vertexBuf[0].col);
-	glTexCoordPointer(2,GL_FLOAT,sizeof(smVertex),&vertexBuf[0].tx);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glGenBuffers(1,&VertexBufferObject);
+	glGenVertexArrays(1,&VertexArrayObject);
+	glGenBuffers(1,&IndexBufferObject);
+	glBindVertexArray(VertexArrayObject);
+	glBindBuffer(GL_ARRAY_BUFFER,VertexBufferObject);
+	glBufferData(GL_ARRAY_BUFFER,sizeof(smVertex)*VERTEX_BUFFER_SIZE,vertexBuf,GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,IndexBufferObject);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(GLushort)*((VERTEX_BUFFER_SIZE*6)/4),indexBuf,GL_DYNAMIC_DRAW);
+	glVertexAttribPointer(0,3,GL_FLOAT,0,sizeof(smVertex),(void*)offsetof(smVertex,x));//vp
+	glVertexAttribPointer(1,4,GL_UNSIGNED_BYTE,1,sizeof(smVertex),(void*)offsetof(smVertex,col));//vc
+	glVertexAttribPointer(2,2,GL_FLOAT,0,sizeof(smVertex),(void*)offsetof(smVertex,tx));//vtc
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+	glBindVertexArray(0);
 	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
 	glPixelStorei(GL_PACK_ALIGNMENT,1);
-	glDisable(GL_TEXTURE_2D);
-	if(pOpenGLDevice->have_GL_ARB_texture_rectangle)glDisable(GL_TEXTURE_RECTANGLE_ARB);
-	glEnable(pOpenGLDevice->TextureTarget);
 	glEnable(GL_SCISSOR_TEST);
 	glDisable(GL_CULL_FACE);
-	glDisable(GL_LIGHTING);
+	glActiveTexture(GL_TEXTURE0);
 	glDepthFunc(GL_GEQUAL);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GEQUAL,1.0f/255.0f);
-	glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
 	filtermode=TFLT_LINEAR;
-	glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-	glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	//GL_REPEAT doesn't work with non-pot textures...
-	glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-	glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-	glTexParameteri(pOpenGLDevice->TextureTarget,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
 	primcnt=0;primType=PRIM_QUADS;primBlend=BLEND_ALPHABLEND;primTex=0;
 	glScissor(0,0,scrw,scrh);
 	glViewport(0,0,scrw,scrh);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	configProjectionMatrix2D(scrw,scrh);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+	_smMatrix Mmodv;Mmodv.loadIdentity();
+	memcpy(mmodv,Mmodv.m,sizeof(mmodv));
+	glUniformMatrix4fv(loc_mmodv,1,0,mmodv);
 	return true;
 }
+#else
+#include "gfx_glfw_compat.cpp"
+#endif //USE_OPENGL_COMPATIBILITY_PROFILE

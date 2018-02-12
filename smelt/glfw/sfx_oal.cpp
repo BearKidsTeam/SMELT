@@ -10,8 +10,8 @@
  */
 #include "smelt_internal.hpp"
 
-static const char* SFX_OAL_SRCFN="smelt/glfw/sfx_oal.cpp";
 #ifndef ENABLE_DUMB
+static const char* SFX_OAL_SRCFN="smelt/glfw/sfx_oal.cpp";
 #ifdef ENABLE_OGG_SUPPORT
 struct oggdata{const BYTE *data;DWORD size,pos;};
 static void* readVorbis(const BYTE *data,const DWORD size, ALsizei *decomp_size,ALenum *fmt,ALsizei *freq);

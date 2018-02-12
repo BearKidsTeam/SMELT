@@ -10,6 +10,7 @@
  *
  */
 
+static const char* SFX_DUMB_SRCFN="smelt/glfw/sfx_dumb.cpp";
 SMSFX SMELT_IMPL::smSFXLoad(const char *path)
 {return 0;}
 SMSFX SMELT_IMPL::smSFXLoadFromMemory(const char *ptr,DWORD size)
@@ -55,7 +56,7 @@ void SMELT_IMPL::smChannelSetPosd(SMCHN chn,int pos)
 
 bool SMELT_IMPL::initOAL()
 {
-	smLog("%s:" SLINE ": I'm dumb!\n",SFX_OAL_SRCFN);
+	smLog("%s:" SLINE ": I'm dumb!\n",SFX_DUMB_SRCFN);
 	return true;
 }
 void SMELT_IMPL::finiOAL()

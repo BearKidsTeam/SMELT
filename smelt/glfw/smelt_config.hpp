@@ -15,7 +15,7 @@
 #define SRC_MAX 128
 
 /*
- * Client-side vertex buffer size.
+ * Vertex buffer size.
  */
 #define VERTEX_BUFFER_SIZE 4000
 
@@ -28,3 +28,8 @@
  * Undefine this to disable ogg support.
  */
 #define ENABLE_OGG_SUPPORT
+
+/*
+ * Uncomment this to use the OpenGL 1.2/2.1 implementation instead.
+ */
+//#define USE_OPENGL_COMPATIBILITY_PROFILE

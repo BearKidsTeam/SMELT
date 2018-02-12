@@ -21,8 +21,10 @@ Additional building dependencies for the GLFW version on a debian-based system:
 
 >libglfw3-dev libglew-dev
 
-Now there's a OpenGL 3.2+ port for the GLFW version which can be found
-in the `glfw_m` folder. It is experimental and buggy. Use with caution.
+With the GLFW version, you are now allowed to choose the OpenGL version
+to use (at compile time). Refer to `smelt_config.hpp` in the
+implementation folder for details. The OpenGL 3.2 port is still
+experimental and buggy. Use with caution.
 
 Please also note that minor differences exist across different versions.
 

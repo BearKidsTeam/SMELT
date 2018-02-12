@@ -11,7 +11,7 @@
 #include "smelt_internal.hpp"
 #include <thread>
 #include <chrono>
-static const char* SYS_GLFW_SRCFN="smelt/glfw/sys_glfw.cpp";
+static const char* SYS_GLFW_SRCFN="smelt/glfw_m/sys_glfw.cpp";
 int refcnt=0;
 SMELT_IMPL *pSM=0;
 char lasterr[1024];
@@ -115,8 +115,14 @@ bool SMELT_IMPL::smInit()
 	glfwWindowHint(GLFW_ALPHA_BITS,8);
 	glfwWindowHint(GLFW_DEPTH_BITS,16);
 	glfwWindowHint(GLFW_DOUBLEBUFFER,1);
+#ifdef USE_OPENGL_COMPATIBILITY_PROFILE
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,2);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,1);
+#else
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
+#endif
 	GLFWwindow *screen=glfwCreateWindow(windowed?scrw:dispw,windowed?scrh:disph,winTitle,NULL,NULL);
 	hwnd=(void*)screen;
 	if(!hwnd)

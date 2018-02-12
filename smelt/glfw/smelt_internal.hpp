@@ -44,8 +44,9 @@
 class TOpenGLDevice
 {
 public:
-	GLenum TextureTarget;
 	bool have_base_opengl;
+#ifdef USE_OPENGL_COMPATIBILITY_PROFILE
+	GLenum TextureTarget;
 	bool have_GL_ARB_texture_rectangle;
 	bool have_GL_ARB_texture_non_power_of_two;
 	bool have_GL_EXT_framebuffer_object;
@@ -53,6 +54,7 @@ public:
 	bool have_GL_ARB_vertex_buffer_object;
 	bool have_GL_EXT_framebuffer_multisample;
 	bool have_GL_EXT_framebuffer_blit;
+#endif
 };
 
 struct glTexture;
@@ -193,6 +195,15 @@ public:
 	smVertex *vertexBuf;
 	GLushort *indexBuf;
 	GLuint IndexBufferObject;
+#ifndef USE_OPENGL_COMPATIBILITY_PROFILE
+	GLuint VertexBufferObject;
+	GLuint VertexArrayObject;
+	GLuint ShaderProgram;
+	GLuint fragshader,vertshader;
+	int loc_tex,loc_mmodv,loc_mproj;
+	float mmodv[16],mproj[16];
+	SMTEX emptyTex;
+#endif
 	TRenderTargetList *targets;
 	TRenderTargetList *curTarget;
 	TTextureList *textures;
