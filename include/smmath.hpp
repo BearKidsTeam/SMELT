@@ -15,7 +15,11 @@
 #define sqr(x) ((x)*(x))
 #define EPS 1e-8
 #ifndef PI
-#define PI 3.14159265358979323846f
+#define PI 3.14159265358979323846264338327950288f
+#endif
+#ifdef min //for windows sdk, the stupidest sdk ever
+#undef min
+#undef max
 #endif
 template<class T>const T& min(const T& a,const T& b){return a<b?a:b;}
 template<class T>const T& max(const T& a,const T& b){return a>b?a:b;}

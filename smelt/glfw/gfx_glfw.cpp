@@ -730,7 +730,7 @@ void SMELT_IMPL::configProjectionMatrix2D(int w,int h)
 void SMELT_IMPL::configProjectionMatrix3D(int w,int h,float fov)
 {
 	memset(mproj,0,sizeof(mproj));
-	float f=1./tanf(M_PI*fov/360.);
+	float f=1./tanf(PI*fov/360.);
 	float ar=(float)w/(float)h;
 	float Near=0.1,Far=1000.;
 	mproj[0]=f/ar;mproj[5]=f;

@@ -15,7 +15,7 @@
 #define sqr(x) ((x)*(x))
 #define EPS 1e-6
 #ifndef PI
-#define PI 3.14159265358979323846f
+#define PI 3.14159265358979323846264338327950288f
 #endif
 
 class _smMath

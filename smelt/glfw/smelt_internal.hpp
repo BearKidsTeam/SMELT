@@ -18,8 +18,14 @@
 #include <cstdlib>
 #include <ctime>
 #include <cstdarg>
+#ifdef WIN32
+#include <windows.h>
+#include <intrin.h>
+#define strcasecmp _stricmp
+#else
 #include <dirent.h>
 #include <unistd.h>
+#endif
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -31,10 +37,6 @@
 #include <ogg/ogg.h>
 #include <vorbis/vorbisfile.h>
 #endif
-#endif
-#ifdef WIN32
-#include <windows.h>
-#include <intrin.h>
 #endif
 
 #define xstr(s) str(s)
