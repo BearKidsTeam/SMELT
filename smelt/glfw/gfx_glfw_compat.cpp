@@ -582,6 +582,8 @@ DWORD* SMELT_IMPL::decodeImage(BYTE *data,const char *fn,DWORD size,int &w,int &
 		}
 		return px;
 	}
+
+#ifdef USE_CXIMAGE
 	CxImage img;
 	img.Decode(data,size,CXIMAGE_FORMAT_UNKNOWN);
 	if(img.IsValid())
@@ -589,7 +591,7 @@ DWORD* SMELT_IMPL::decodeImage(BYTE *data,const char *fn,DWORD size,int &w,int &
 		w=img.GetWidth();h=img.GetHeight();
 		px=new DWORD[w*h];
 		BYTE *sptr=(BYTE*)px;
-		bool atunnel=img.AlphaIsValid();
+		bool achannel=img.AlphaIsValid();
 		for(int i=0;i<h;++i)
 		for(int j=0;j<w;++j)
 		{
@@ -597,9 +599,27 @@ DWORD* SMELT_IMPL::decodeImage(BYTE *data,const char *fn,DWORD size,int &w,int &
 			*(sptr++)=rgb.rgbRed;
 			*(sptr++)=rgb.rgbGreen;
 			*(sptr++)=rgb.rgbBlue;
-			*(sptr++)=atunnel?rgb.rgbReserved:0xFF;
+			*(sptr++)=achannel?rgb.rgbReserved:0xFF;
 		}
 	}
+#else
+	ilInit();
+	ILuint iid;
+	ilGenImages(1,&iid);
+	if(ilLoadL(IL_TYPE_UNKNOWN,data,size))
+	{
+		w=ilGetInteger(IL_IMAGE_WIDTH);
+		h=ilGetInteger(IL_IMAGE_HEIGHT);
+		if(ilGetInteger(IL_IMAGE_FORMAT)!=IL_UNSIGNED_INT||ilGetInteger(IL_IMAGE_TYPE)!=IL_RGBA)
+		ilConvertImage(IL_UNSIGNED_INT,IL_RGBA);
+		px=new DWORD[w*h];
+		for(int i=0;i<h;++i)
+		memcpy(px+w*(h-1-i),ilGetData()+w*i*sizeof(DWORD)/sizeof(ILubyte),w*sizeof(DWORD));
+	}
+	ilDeleteImages(1,&iid);
+	ilShutDown();
+#endif
+
 	return px;
 }
 void SMELT_IMPL::bindTexture(glTexture *t)

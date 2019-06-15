@@ -9,7 +9,13 @@
  *
  */
 #include "smelt_internal.hpp"
+
+#ifdef USE_CXIMAGE
 #include "CxImage/ximage.h"
+#else
+#include "IL/il.h"
+#endif
+
 #define dbg printf("%d: 0x%X\n",__LINE__,glGetError())
 #ifndef USE_OPENGL_COMPATIBILITY_PROFILE
 #include "smmath_priv.hpp"
@@ -575,6 +581,8 @@ DWORD* SMELT_IMPL::decodeImage(BYTE *data,const char *fn,DWORD size,int &w,int &
 		}
 		return px;
 	}
+
+#ifdef USE_CXIMAGE
 	CxImage img;
 	img.Decode(data,size,CXIMAGE_FORMAT_UNKNOWN);
 	if(img.IsValid())
@@ -593,6 +601,24 @@ DWORD* SMELT_IMPL::decodeImage(BYTE *data,const char *fn,DWORD size,int &w,int &
 			*(sptr++)=achannel?rgb.rgbReserved:0xFF;
 		}
 	}
+#else
+	ilInit();
+	ILuint iid;
+	ilGenImages(1,&iid);
+	if(ilLoadL(IL_TYPE_UNKNOWN,data,size))
+	{
+		w=ilGetInteger(IL_IMAGE_WIDTH);
+		h=ilGetInteger(IL_IMAGE_HEIGHT);
+		if(ilGetInteger(IL_IMAGE_FORMAT)!=IL_UNSIGNED_INT||ilGetInteger(IL_IMAGE_TYPE)!=IL_RGBA)
+		ilConvertImage(IL_UNSIGNED_INT,IL_RGBA);
+		px=new DWORD[w*h];
+		for(int i=0;i<h;++i)
+		memcpy(px+w*(h-1-i),ilGetData()+w*i*sizeof(DWORD)/sizeof(ILubyte),w*sizeof(DWORD));
+	}
+	ilDeleteImages(1,&iid);
+	ilShutDown();
+#endif
+
 	return px;
 }
 void SMELT_IMPL::bindTexture(glTexture *t)

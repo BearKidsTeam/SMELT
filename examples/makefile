@@ -1,7 +1,7 @@
 CC= g++
 CXXFLAGS= -I/usr/include/freetype2 -I../include -D_LINUX -g
 LINK= -lSDL2 -lvorbis -lvorbisfile -lopenal -ljpeg -lpng -lfreetype -lz -lsmeltext -lsmelt -lCxImage
-LINK_GLFW= -lglfw -lGLEW -lGL -lvorbis -lvorbisfile -lopenal -ljpeg -lpng -lfreetype -lz -lsmeltext -lsmelt -lCxImage
+LINK_GLFW= -lglfw -lGLEW -lGL -lvorbis -lvorbisfile -lopenal -ljpeg -lpng -lfreetype -lz -lsmeltext -lsmelt -lIL -lILU
 LINK_FOLDER= -L../smelt/sdl -L../extensions
 LINK_GLFW_FOLDER= -L../smelt/glfw -L../extensions
 
