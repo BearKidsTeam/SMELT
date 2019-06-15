@@ -1,10 +1,13 @@
-option(BUILD_DUMB "Disable sound support" OFF)
+option (BUILD_DUMB "Disable sound support" OFF)
+option (USE_CXIMAGE "Use CxImage instead of DevIL" OFF)
 
-find_package(PkgConfig REQUIRED)
+find_package(glfw3 REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(OpenAL REQUIRED)
 
-pkg_search_module(GLFW REQUIRED glfw3)
+if (NOT USE_CXIMAGE)
+	find_package(DevIL REQUIRED)
+endif ()
 
 set (SMELT_GLFW_CPP_FILES
 	gfx_glfw.cpp
@@ -14,11 +17,14 @@ set (SMELT_GLFW_CPP_FILES
 )
 
 include_directories(
-	${GLFW_INCLUDE_DIRS}
 	${GLEW_INCLUDE_DIRS}
 )
 
 add_library(smelt STATIC ${SMELT_GLFW_CPP_FILES})
+
+target_include_directories(smelt PUBLIC ../../include)
+
+target_link_libraries(smelt glfw)
 
 if (BUILD_DUMB)
 	message (STATUS "")
@@ -26,5 +32,14 @@ if (BUILD_DUMB)
 	message (STATUS "")
 	target_compile_definitions(smelt PRIVATE
 		ENABLE_DUMB
+	)
+endif ()
+
+if (USE_CXIMAGE)
+	message (STATUS "")
+	message (STATUS "USE_CXIMAGE build option enabled")
+	message (STATUS "")
+	target_compile_definitions(smelt PRIVATE
+		USE_CXIMAGE
 	)
 endif ()
