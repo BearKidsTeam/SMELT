@@ -16,6 +16,8 @@ set (SMELT_GLFW_CPP_FILES
 	sys_glfw.cpp
 )
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 include_directories(
 	${GLEW_INCLUDE_DIRS}
 )
