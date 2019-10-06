@@ -1,6 +1,6 @@
 project (smelt)
 
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.10)
 
 option (BUILD_DUMB "Disable sound support" OFF)
 option (BUILD_EXTENSIONS "Build extensions" ON)

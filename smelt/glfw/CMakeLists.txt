@@ -3,7 +3,9 @@ option (USE_CXIMAGE "Use CxImage instead of DevIL" OFF)
 
 find_package(glfw3 REQUIRED)
 find_package(GLEW REQUIRED)
+if (NOT BUILD_DUMB)
 find_package(OpenAL REQUIRED)
+endif ()
 
 if (NOT USE_CXIMAGE)
 	find_package(DevIL REQUIRED)
