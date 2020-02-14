@@ -280,6 +280,9 @@ public:
 	 * Returns the result.
 	 */
 	virtual float smGetTime()=0;
+	virtual const char* smGetCPUModel()=0;
+	virtual const char* smGetOSInfo()=0;
+	virtual const char* smGetDispDriver()=0;
 
 	/*
 	 * Load a single sound file into memory.

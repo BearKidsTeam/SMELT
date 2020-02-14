@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <cstdarg>
+#include <string>
 #ifdef WIN32
 #include <windows.h>
 #include <intrin.h>
@@ -110,6 +111,10 @@ public:
 	virtual float smGetDelta();
 	virtual float smGetTime();
 
+	virtual const char* smGetCPUModel();
+	virtual const char* smGetOSInfo();
+	virtual const char* smGetDispDriver();
+
 	virtual SMSFX smSFXLoad(const char *path);
 	virtual SMSFX smSFXLoadFromMemory(const char *ptr,DWORD size);
 	virtual SMCHN smSFXPlay(SMSFX fx,int vol=100,int pan=0,float pitch=1.,bool loop=0);
@@ -191,6 +196,7 @@ public:
 	char logFile[256];
 	int limfps;
 	bool hideMouse,noSuspend;
+	std::string osver,cpumodel,dispdrv;
 
 	TOpenGLDevice *pOpenGLDevice;
 	smVertex *vertexArray;

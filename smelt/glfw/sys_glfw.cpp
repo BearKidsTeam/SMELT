@@ -53,11 +53,14 @@ bool SMELT_IMPL::smInit()
 	smLog("%s:" SLINE ": SMELT api version %d\n",SYS_GLFW_SRCFN,SMELT_APILEVEL);
 	time_t t=time(NULL);
 	smLog("%s:" SLINE ": Date %s",SYS_GLFW_SRCFN,asctime(localtime(&t)));
+	char pout[128];
 #ifdef WIN32
 	OSVERSIONINFO os_ver; MEMORYSTATUS mem_st;
 	os_ver.dwOSVersionInfoSize=sizeof(os_ver);
 	GetVersionEx(&os_ver);
-	smLog("%s:" SLINE ": OS: Windows %ld.%ld.%ld\n", SYS_GLFW_SRCFN,os_ver.dwMajorVersion,os_ver.dwMinorVersion,os_ver.dwBuildNumber);
+	snprintf(pout,128,"Windows %ld.%ld.%ld",os_ver.dwMajorVersion,os_ver.dwMinorVersion,os_ver.dwBuildNumber);
+	osver=std::string(pout);
+	smLog("%s:" SLINE ": OS: %s\n", SYS_GLFW_SRCFN,osver.c_str());
 
 	int CPUInfo[4]={-1};
 	__cpuid(CPUInfo,0x80000000);
@@ -74,23 +77,31 @@ bool SMELT_IMPL::smInit()
 		memcpy(cpuName+32, CPUInfo, sizeof(CPUInfo));
 	}
 	while(*cpuName==' ')++cpuName;
+	cpumodel=std::string(cpuName);
 	smLog("%s:" SLINE ": CPU: %s\n", SYS_GLFW_SRCFN,cpuName);
 	free(loced);
 
 	GlobalMemoryStatus(&mem_st);
 	smLog("%s:" SLINE ": Memory: %ldK total, %ldK free\n", SYS_GLFW_SRCFN,mem_st.dwTotalPhys/1024L,mem_st.dwAvailPhys/1024L);
 #else
-	system("uname -svm > /tmp/os.out");
-	char osv[100];FILE* a=fopen("/tmp/os.out","r");fgets(osv,100,a);fclose(a);
-	osv[strlen(osv)-1]='\0';
-	smLog("%s:" SLINE ": OS: %s\n",SYS_GLFW_SRCFN,osv);
-	system("rm /tmp/os.out");
+	FILE* a=popen("uname -srm","r");
+	fgets(pout,128,a);pclose(a);
+	osver=std::string(pout);
+	osver.pop_back();
+	if(!access("/etc/os-release",R_OK))
+	{
+		a=popen("grep -oP 'PRETTY_NAME=\"\\K.*(?=\")' /etc/os-release","r");
+		fgets(pout,128,a);pclose(a);
+		std::string osrel(pout);osrel.pop_back();
+		osver=osrel+std::string("; ")+osver;
+	}
+	smLog("%s:" SLINE ": OS: %s\n",SYS_GLFW_SRCFN,osver.c_str());
 
-	system("cat /proc/cpuinfo | grep name -m 1 > /tmp/cpu.out");
-	a=fopen("/tmp/cpu.out","r");fgets(osv,100,a);fclose(a);
-	osv[strlen(osv)-1]='\0';char *ptr=osv;while(*ptr!=':')++ptr;ptr+=2;
-	smLog("%s:" SLINE ": CPU: %s\n",SYS_GLFW_SRCFN,osv);
-	system("rm /tmp/cpu.out");
+	a=popen("grep -oP -m1 'model name\t: \\K.*' /proc/cpuinfo","r");
+	fgets(pout,128,a);fclose(a);
+	cpumodel=std::string(pout);
+	while(cpumodel.length()&&isspace(cpumodel.back()))cpumodel.pop_back();
+	smLog("%s:" SLINE ": CPU: %s\n",SYS_GLFW_SRCFN,cpumodel.c_str());
 
 	a=fopen("/proc/meminfo","r");
 	unsigned totalm,freem;
@@ -246,6 +257,10 @@ void SMELT_IMPL::smSetFPS(int fps)
 float SMELT_IMPL::smGetFPS(){return fps;}
 float SMELT_IMPL::smGetDelta(){return timeDelta;}
 float SMELT_IMPL::smGetTime(){return timeS;}
+
+const char *SMELT_IMPL::smGetCPUModel(){return cpumodel.c_str();}
+const char *SMELT_IMPL::smGetOSInfo(){return osver.c_str();}
+const char *SMELT_IMPL::smGetDispDriver(){return dispdrv.c_str();}
 
 SMELT_IMPL::SMELT_IMPL()
 {

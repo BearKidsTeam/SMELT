@@ -885,6 +885,9 @@ bool SMELT_IMPL::loadGLEntryPoints()
 	smLog("%s:" SLINE ": GL_RENDERER: %s\n",GFX_GLFW_SRCFN,(const char *)glGetString(GL_RENDERER));
 	smLog("%s:" SLINE ": GL_VENDOR: %s\n",GFX_GLFW_SRCFN,(const char *)glGetString(GL_VENDOR));
 	smLog("%s:" SLINE ": GL_VERSION: %s\n",GFX_GLFW_SRCFN,(const char *)glGetString(GL_VERSION));
+	dispdrv=std::string("Renderer: ")+std::string((const char*)glGetString(GL_RENDERER));
+	dispdrv+=std::string("\nVendor: ")+std::string((const char*)glGetString(GL_VENDOR));
+	dispdrv+=std::string("\nOpenGL Version: ")+std::string((const char*)glGetString(GL_VERSION));
 	const char *verstr=(const char*)glGetString(GL_VERSION);
 	int maj=0,min=0;
 	sscanf(verstr,"%d.%d",&maj,&min);
