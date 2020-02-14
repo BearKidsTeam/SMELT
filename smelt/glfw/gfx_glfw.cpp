@@ -609,11 +609,11 @@ DWORD* SMELT_IMPL::decodeImage(BYTE *data,const char *fn,DWORD size,int &w,int &
 	{
 		w=ilGetInteger(IL_IMAGE_WIDTH);
 		h=ilGetInteger(IL_IMAGE_HEIGHT);
-		if(ilGetInteger(IL_IMAGE_FORMAT)!=IL_UNSIGNED_INT||ilGetInteger(IL_IMAGE_TYPE)!=IL_RGBA)
-		ilConvertImage(IL_UNSIGNED_INT,IL_RGBA);
+		if(ilGetInteger(IL_IMAGE_FORMAT)!=IL_UNSIGNED_BYTE||ilGetInteger(IL_IMAGE_TYPE)!=IL_RGBA)
+			ilConvertImage(IL_RGBA,IL_UNSIGNED_BYTE);
 		px=new DWORD[w*h];
 		for(int i=0;i<h;++i)
-		memcpy(px+w*(h-1-i),ilGetData()+w*i*sizeof(DWORD)/sizeof(ILubyte),w*sizeof(DWORD));
+			ilCopyPixels(0,i,0,w,1,1,IL_RGBA,IL_UNSIGNED_BYTE,px+w*(h-1-i));
 	}
 	ilDeleteImages(1,&iid);
 	ilShutDown();
