@@ -29,7 +29,7 @@ public:
 	float h(){return (float)_h;}
 	void free();
 	bool setChar(wchar_t c,FT_Face ttface,smTTFont* par);
-	void render(float x,float y,float z,DWORD col,float scalex,float scaley,bool rtl);
+	void render(float x,float y,float z,DWORD col,float scalex,float scaley);
 };
 
 SMELT *_smTTChar::sm=NULL;
@@ -71,23 +71,13 @@ bool _smTTChar::setChar(wchar_t c,FT_Face ttface,smTTFont* par)
 	quad.v[3].tx=1.*dx/par->texw;quad.v[3].ty=1.*(rh+dy)/par->texh;
 	return true;
 }
-void _smTTChar::render(float x,float y,float z,DWORD col,float scalex,float scaley,bool rtl)
+void _smTTChar::render(float x,float y,float z,DWORD col,float scalex,float scaley)
 {
 	for(int i=0;i<4;++i)quad.v[i].col=col,quad.v[i].z=z;
-	if(!rtl)
-	{
-		quad.v[0].x=x+xofs*scalex;quad.v[0].y=y+(yofs-rh)*scaley;
-		quad.v[1].x=x+(rw+xofs)*scalex;quad.v[1].y=y+(yofs-rh)*scaley;
-		quad.v[2].x=x+(rw+xofs)*scalex;quad.v[2].y=y+yofs*scaley;
-		quad.v[3].x=x+xofs*scalex;quad.v[3].y=y+yofs*scaley;
-	}
-	else
-	{
-		quad.v[0].x=x+(-rw+xofs)*scalex;quad.v[0].y=y+(yofs-rh)*scaley;
-		quad.v[1].x=x+xofs*scalex;quad.v[1].y=y+(yofs-rh)*scaley;
-		quad.v[2].x=x+xofs*scalex;quad.v[2].y=y+yofs*scaley;
-		quad.v[3].x=x+(-rw+xofs)*scalex;quad.v[3].y=y+yofs*scaley;
-	}
+	quad.v[0].x=x+xofs*scalex;quad.v[0].y=y+(yofs-rh)*scaley;
+	quad.v[1].x=x+(rw+xofs)*scalex;quad.v[1].y=y+(yofs-rh)*scaley;
+	quad.v[2].x=x+(rw+xofs)*scalex;quad.v[2].y=y+yofs*scaley;
+	quad.v[3].x=x+xofs*scalex;quad.v[3].y=y+yofs*scaley;
 	sm->smRenderQuad(&quad);
 }
 
@@ -201,34 +191,38 @@ void smTTFont::render(float x,float y,float z,DWORD col,int align,float scalex,f
 	{
 		curx=x;cury=y;lh=0;
 		for(int i=0;buf[i]!=L'\0';++i)
+			if(chars.find(buf[i])!=chars.end())
+				if(chars[buf[i]]->h()>lh)lh=chars[buf[i]]->h();
+		for(int i=0;buf[i]!=L'\0';++i)
 		{
 			if(buf[i]!=L'\n')
 			{
 				if(chars.find(buf[i])!=chars.end())
 				{
-					chars[buf[i]]->render(curx,cury,z,col,scalex,scaley,false);
+					chars[buf[i]]->render(curx,cury,z,col,scalex,scaley);
 					curx+=chars[buf[i]]->w()*scalex;
-					lh=chars[buf[i]]->h()>lh?chars[buf[i]]->h():lh;
 				}
 			}
-			else cury+=lh*scaley,lh=0,curx=x;
+			else cury+=lh*scaley,curx=x;
 		}
 	}
 	if(align==ALIGN_RIGHT)
 	{
 		curx=x;cury=y;lh=0;
 		for(int i=wcslen(buf)-1;i>=0;--i)
+			if(chars.find(buf[i])!=chars.end())
+				if(chars[buf[i]]->h()>lh)lh=chars[buf[i]]->h();
+		for(int i=wcslen(buf)-1;i>=0;--i)
 		{
 			if(buf[i]!=L'\n')
 			{
 				if(chars.find(buf[i])!=chars.end())
 				{
-					chars[buf[i]]->render(curx,cury,z,col,scalex,scaley,true);
-					curx-=chars[buf[i]]->w()*scalex;
-					lh=chars[buf[i]]->h()>lh?chars[buf[i]]->h():lh;
+					chars[buf[i]]->render(curx,cury,z,col,scalex,scaley);
+					if(i&&buf[i-1]!=L'\n')curx-=chars[buf[i-1]]->w()*scalex;
 				}
 			}
-			else cury-=lh*scaley,lh=0,curx=x;
+			else cury-=lh*scaley,curx=x;
 		}
 	}
 }
