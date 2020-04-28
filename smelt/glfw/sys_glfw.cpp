@@ -16,13 +16,17 @@ int refcnt=0;
 SMELT_IMPL *pSM=0;
 char lasterr[1024];
 
-void glfwErrorHandler(int err,const char* desc);
-void glfwFocChangeHandler(GLFWwindow*,int foc);
-void glfwCursorEnterHandler(GLFWwindow*,int ent);
-void glfwKBEventHandler(GLFWwindow* window,int key,int scancode,int action,int mods);
-void glfwMouseButtonHandler(GLFWwindow* w,int btn,int action,int mods);
-void glfwMouseMotionHandler(GLFWwindow*,double x,double y);
-void glfwMouseWheelHandler(GLFWwindow* w,double x,double y);
+class glfwHandlers
+{
+public:
+	static void glfwErrorHandler(int err,const char* desc);
+	static void glfwFocChangeHandler(GLFWwindow*,int foc);
+	static void glfwCursorEnterHandler(GLFWwindow*,int ent);
+	static void glfwKBEventHandler(GLFWwindow* window,int key,int scancode,int action,int mods);
+	static void glfwMouseButtonHandler(GLFWwindow* w,int btn,int action,int mods);
+	static void glfwMouseMotionHandler(GLFWwindow*,double x,double y);
+	static void glfwMouseWheelHandler(GLFWwindow* w,double x,double y);
+};
 
 SMELT* smGetInterface(int apilevel)
 {
@@ -110,7 +114,7 @@ bool SMELT_IMPL::smInit()
 	smLog("%s:" SLINE ": RAM: %ukB installed, %ukB free\n",SYS_GLFW_SRCFN,totalm,freem);
 	fclose(a);
 #endif
-	glfwSetErrorCallback(glfwErrorHandler);
+	glfwSetErrorCallback(glfwHandlers::glfwErrorHandler);
 	if(!glfwInit())
 	{
 		smLog("%s:" SLINE ": glfwInit() failed with error %s\n",SYS_GLFW_SRCFN,lasterr);
@@ -150,12 +154,12 @@ bool SMELT_IMPL::smInit()
 		if(!pSM->Active)pSM->focusChange(true);
 	}
 	if(hideMouse)glfwSetInputMode(screen,GLFW_CURSOR,GLFW_CURSOR_HIDDEN);
-	glfwSetWindowFocusCallback(screen,glfwFocChangeHandler);
-	glfwSetCursorEnterCallback(screen,glfwCursorEnterHandler);
-	glfwSetKeyCallback(screen,glfwKBEventHandler);
-	glfwSetCursorPosCallback(screen,glfwMouseMotionHandler);
-	glfwSetMouseButtonCallback(screen,glfwMouseButtonHandler);
-	glfwSetScrollCallback(screen,glfwMouseWheelHandler);
+	glfwSetWindowFocusCallback(screen,glfwHandlers::glfwFocChangeHandler);
+	glfwSetCursorEnterCallback(screen,glfwHandlers::glfwCursorEnterHandler);
+	glfwSetKeyCallback(screen,glfwHandlers::glfwKBEventHandler);
+	glfwSetCursorPosCallback(screen,glfwHandlers::glfwMouseMotionHandler);
+	glfwSetMouseButtonCallback(screen,glfwHandlers::glfwMouseButtonHandler);
+	glfwSetScrollCallback(screen,glfwHandlers::glfwMouseWheelHandler);
 	initInput();
 	if(!initOGL()){smFinale();return false;}
 	if(!initOAL()){smFinale();return false;}
@@ -214,10 +218,17 @@ void SMELT_IMPL::smQuitFunc(smHandler* h){quitHandler=h;}
 void SMELT_IMPL::smWinTitle(const char *title){strcpy(winTitle,title);}
 bool SMELT_IMPL::smIsActive(){return Active;}
 void SMELT_IMPL::smNoSuspend(bool para){noSuspend=para;}
-void SMELT_IMPL::smVidMode(int resX,int resY,bool _windowed)
+void SMELT_IMPL::smVidMode(int resX,int resY,bool _windowed,bool showWindow)
 {
 	if(vertexArray)return;
-	if(!pOpenGLDevice)scrw=resX,scrh=resY,windowed=_windowed;
+	if(!pOpenGLDevice)
+	{
+		scrw=resX;
+		scrh=resY;
+		windowed=_windowed;
+		if(!showWindow)
+			glfwWindowHint(GLFW_VISIBLE,GLFW_FALSE);
+	}
 	else if(windowed!=_windowed)
 	{
 		windowed=_windowed;
@@ -246,6 +257,14 @@ void SMELT_IMPL::smScreenShot(const char* path)
 	{
 		//glFinish();
 		//glReadPixels(0,0,screen->w,screen->h,GL_RGB,GL_UNSIGNED_BYTE,surface->pixels);
+	}
+}
+void SMELT_IMPL::smPixelCopy(int origx,int origy,size_t w,size_t h,size_t sz,void *px)
+{
+	if(pOpenGLDevice)
+	{
+		glFinish();
+		glReadnPixels(0,0,w,h,GL_RGBA,GL_UNSIGNED_BYTE,sz,px);
 	}
 }
 void SMELT_IMPL::smSetFPS(int fps)
@@ -293,19 +312,19 @@ bool SMELT_IMPL::procGLFWEvent()
 	}
 	return true;
 }
-void glfwErrorHandler(int err,const char* desc)
+void glfwHandlers::glfwErrorHandler(int err,const char* desc)
 {
 	strcpy(lasterr,desc);
 }
-void glfwFocChangeHandler(GLFWwindow*,int foc)
+void glfwHandlers::glfwFocChangeHandler(GLFWwindow*,int foc)
 {
 	pSM->focusChange(foc);
 }
-void glfwCursorEnterHandler(GLFWwindow*,int ent)
+void glfwHandlers::glfwCursorEnterHandler(GLFWwindow*,int ent)
 {
 	pSM->mouseOver=ent;
 }
-void glfwKBEventHandler(GLFWwindow* window,int key,int scancode,int action,int mods)
+void glfwHandlers::glfwKBEventHandler(GLFWwindow* window,int key,int scancode,int action,int mods)
 {
 	if(action==GLFW_RELEASE)
 	{
@@ -320,7 +339,7 @@ void glfwKBEventHandler(GLFWwindow* window,int key,int scancode,int action,int m
 		pSM->buildEvent(INPUT_KEYDOWN,key,0,0,-1,-1);
 	}
 }
-void glfwMouseButtonHandler(GLFWwindow* w,int btn,int action,int mods)
+void glfwHandlers::glfwMouseButtonHandler(GLFWwindow* w,int btn,int action,int mods)
 {
 	double x,y;glfwGetCursorPos(w,&x,&y);
 	if(action==GLFW_PRESS)
@@ -342,11 +361,11 @@ void glfwMouseButtonHandler(GLFWwindow* w,int btn,int action,int mods)
 		pSM->buildEvent(INPUT_MBUTTONUP,SMK_MBUTTON,0,0,x,y);
 	}
 }
-void glfwMouseMotionHandler(GLFWwindow*,double x,double y)
+void glfwHandlers::glfwMouseMotionHandler(GLFWwindow*,double x,double y)
 {
 	pSM->buildEvent(INPUT_MOUSEMOVE,0,0,0,x,y);
 }
-void glfwMouseWheelHandler(GLFWwindow* w,double x,double y)
+void glfwHandlers::glfwMouseWheelHandler(GLFWwindow* w,double x,double y)
 {
 	double cx,cy;glfwGetCursorPos(w,&cx,&cy);
 	if(y>0)pSM->buildEvent(INPUT_MOUSEWHEEL,1,0,0,cx,cy);

@@ -173,7 +173,7 @@ public:
 	/**
 	 * Enters the main loop.
 	 * The main loop calls update function, focus gain function, focus
-	 * lost function and quit function periodally, handles input events
+	 * lost function and quit function periodically, handles input events
 	 * and flushes the buffers.
 	 * Requires the UpdateFunc set and the initialization of the SMELT
 	 * interface.
@@ -242,7 +242,7 @@ public:
 	 * Take care with fullscreen video modes. Inappropriate fullscreen
 	 * resolutions will cause the failure of smInit().
 	 */
-	virtual void smVidMode(int resX,int resY,bool _windowed)=0;
+	virtual void smVidMode(int resX,int resY,bool _windowed,bool showWindow=true)=0;
 	/*
 	 * Sets the log file path.
 	 * The default value is empty.
@@ -257,8 +257,15 @@ public:
 	/*
 	 * Saves the content of the application window to the given path.
 	 * The picture is saved in the BMP format.
+	 * Deprecated. Not implemented at all in the GLFW version.
 	 */
 	virtual void smScreenShot(const char* path)=0;
+	/*
+	 * Copy pixels from the current rendering target to the address pointed by px.
+	 * The copied region is a rectangle originating from (origx,origy), having a width
+	 * of w and hight of h. sz denotes the maximum number of bytes written to px.
+	 */
+	virtual void smPixelCopy(int origx,int origy,size_t w,size_t h,size_t sz,void* px)=0;
 
 	/*
 	 * Sets the desired FPS value. The macros FPS_* can be used
@@ -288,7 +295,7 @@ public:
 	 * Load a single sound file into memory.
 	 * Currently only ogg and wav files are supported.
 	 * This function loads and decodes the ogg data, which may take
-	 * noticeable time to complete. Consider running it in a seperate
+	 * noticeable time to complete. Consider running it in a separate
 	 * thread if you are loading a larger file.
 	 * Returns the SFX handle on success, or 0 on failure.
 	 */

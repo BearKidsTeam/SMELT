@@ -101,10 +101,11 @@ public:
 	virtual void smWinTitle(const char* title);
 	virtual bool smIsActive();
 	virtual void smNoSuspend(bool para);
-	virtual void smVidMode(int resX,int resY,bool _windowed);
+	virtual void smVidMode(int resX,int resY,bool _windowed,bool showWindow=true);
 	virtual void smLogFile(const char* path);
 	virtual void smLog(const char* format,...);
 	virtual void smScreenShot(const char* path);
+	virtual void smPixelCopy(int origx,int origy,size_t w,size_t h,size_t sz,void* px);
 
 	virtual void smSetFPS(int fps);
 	virtual float smGetFPS();
@@ -175,8 +176,9 @@ public:
 	virtual int smTextureGetHeight(SMTEX tex,bool original=false);
 	virtual DWORD* smTextureLock(SMTEX tex,int l,int t,int w,int h,bool ro=true);
 	virtual void smTexutreUnlock(SMTEX tex);
-//internal routines&variables...
+
 	static SMELT_IMPL* getInterface();
+private:
 	void focusChange(bool actif);
 
 	void *hwnd;
@@ -263,8 +265,9 @@ public:
 	DWORD fixDelta,t0;
 	int fcnt;
 	DWORD dt;
-private:
 	SMELT_IMPL();
+
+	friend class glfwHandlers;
 };
 extern SMELT_IMPL *pSM;
 #endif
