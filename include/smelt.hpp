@@ -242,7 +242,7 @@ public:
 	 * Take care with fullscreen video modes. Inappropriate fullscreen
 	 * resolutions will cause the failure of smInit().
 	 */
-	virtual void smVidMode(int resX,int resY,bool _windowed,bool showWindow=true)=0;
+	virtual void smVidMode(int resX,int resY,bool _windowed,bool _showWindow=true)=0;
 	/*
 	 * Sets the log file path.
 	 * The default value is empty.

@@ -138,6 +138,8 @@ bool SMELT_IMPL::smInit()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
 #endif
+	if(!showwindow)
+		glfwWindowHint(GLFW_VISIBLE,GLFW_FALSE);
 	GLFWwindow *screen=glfwCreateWindow(windowed?scrw:dispw,windowed?scrh:disph,winTitle,NULL,NULL);
 	hwnd=(void*)screen;
 	if(!hwnd)
@@ -218,7 +220,7 @@ void SMELT_IMPL::smQuitFunc(smHandler* h){quitHandler=h;}
 void SMELT_IMPL::smWinTitle(const char *title){strcpy(winTitle,title);}
 bool SMELT_IMPL::smIsActive(){return Active;}
 void SMELT_IMPL::smNoSuspend(bool para){noSuspend=para;}
-void SMELT_IMPL::smVidMode(int resX,int resY,bool _windowed,bool showWindow)
+void SMELT_IMPL::smVidMode(int resX,int resY,bool _windowed,bool _showWindow)
 {
 	if(vertexArray)return;
 	if(!pOpenGLDevice)
@@ -226,8 +228,7 @@ void SMELT_IMPL::smVidMode(int resX,int resY,bool _windowed,bool showWindow)
 		scrw=resX;
 		scrh=resY;
 		windowed=_windowed;
-		if(!showWindow)
-			glfwWindowHint(GLFW_VISIBLE,GLFW_FALSE);
+		showwindow=_showWindow;
 	}
 	else if(windowed!=_windowed)
 	{

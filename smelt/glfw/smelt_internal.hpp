@@ -101,7 +101,7 @@ public:
 	virtual void smWinTitle(const char* title);
 	virtual bool smIsActive();
 	virtual void smNoSuspend(bool para);
-	virtual void smVidMode(int resX,int resY,bool _windowed,bool showWindow=true);
+	virtual void smVidMode(int resX, int resY, bool _windowed, bool _showWindow=true);
 	virtual void smLogFile(const char* path);
 	virtual void smLog(const char* format,...);
 	virtual void smScreenShot(const char* path);
@@ -194,7 +194,7 @@ private:
 	char winTitle[256];
 	int scrw,scrh;
 	int dispw,disph;
-	bool windowed,vsync;
+	bool windowed,vsync,showwindow;
 	char logFile[256];
 	int limfps;
 	bool hideMouse,noSuspend;
