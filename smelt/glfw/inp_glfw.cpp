@@ -85,7 +85,12 @@ void SMELT_IMPL::buildEvent(int type,int k,int scan,int flags,int x,int y)
 	if(eptr->e.type==INPUT_MOUSEMOVE)posx=eptr->e.x,posy=eptr->e.y;
 	if(eptr->e.type==INPUT_MOUSEWHEEL)posz=eptr->e.wheel;
 }
-void SMELT_IMPL::initInput(){posx=posy=.0;memset(keyz,0,sizeof(keyz));}
+void SMELT_IMPL::initInput()
+{
+    posx=posy=.0;
+    memset(keyz,0,sizeof(keyz));
+    memset(keylst,0,sizeof(keylst));
+}
 void SMELT_IMPL::clearQueue()
 {
 	TInputEventList *nxt,*eptr=inpQueue;
