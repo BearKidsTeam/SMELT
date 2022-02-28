@@ -264,6 +264,7 @@ void SMELT_IMPL::smPixelCopy(int origx,int origy,size_t w,size_t h,size_t sz,voi
 {
 	if(pOpenGLDevice)
 	{
+		batchOGL();
 		glFinish();
 		glReadnPixels(0,0,w,h,GL_RGBA,GL_UNSIGNED_BYTE,sz,px);
 	}
