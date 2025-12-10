@@ -10,10 +10,12 @@
  */
 #include "smelt_internal.hpp"
 
+#ifndef DISABLE_IMAGE_DECODING
 #ifdef USE_CXIMAGE
 #include "CxImage/ximage.h"
 #else
 #include "IL/il.h"
+#endif
 #endif
 
 #define dbg printf("%d: 0x%X\n",__LINE__,glGetError())
@@ -569,7 +571,13 @@ DWORD* SMELT_IMPL::decodeImage(BYTE *data,const char *fn,DWORD size,int &w,int &
 	w=h=0;
 	DWORD *px=NULL;
 	int fnlen=fn?strlen(fn):0;
-	if((fnlen>5)&&(strcasecmp((fn+fnlen)-5,".rgba"))==0)//raw image... pending remove
+	if(
+#ifdef DISABLE_IMAGE_DECODING
+		true
+#else
+		(fnlen>5)&&(strcasecmp((fn+fnlen)-5,".rgba"))==0
+#endif
+	)//raw image... pending remove
 	{
 		DWORD *ptr=(DWORD*)data;
 		DWORD _w=ptr[0],_h=ptr[1];
@@ -582,6 +590,7 @@ DWORD* SMELT_IMPL::decodeImage(BYTE *data,const char *fn,DWORD size,int &w,int &
 		return px;
 	}
 
+#ifndef DISABLE_IMAGE_DECODING
 #ifdef USE_CXIMAGE
 	CxImage img;
 	img.Decode(data,size,CXIMAGE_FORMAT_UNKNOWN);
@@ -617,6 +626,7 @@ DWORD* SMELT_IMPL::decodeImage(BYTE *data,const char *fn,DWORD size,int &w,int &
 	}
 	ilDeleteImages(1,&iid);
 	ilShutDown();
+#endif
 #endif
 
 	return px;

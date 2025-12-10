@@ -7,10 +7,6 @@ if (NOT BUILD_DUMB)
 find_package(OpenAL REQUIRED)
 endif ()
 
-if (NOT USE_CXIMAGE)
-	find_package(DevIL REQUIRED)
-endif ()
-
 set (SMELT_GLFW_CPP_FILES
 	gfx_glfw.cpp
 	sfx_oal.cpp
@@ -39,11 +35,20 @@ if (BUILD_DUMB)
 	)
 endif ()
 
-if (USE_CXIMAGE)
+if (DISABLE_IMAGE_DECODING)
+	message (STATUS "")
+	message (STATUS "Image decoding support disabled")
+	message (STATUS "")
+	target_compile_definitions(smelt PRIVATE
+		DISABLE_IMAGE_DECODING
+	)
+elseif (USE_CXIMAGE)
 	message (STATUS "")
 	message (STATUS "USE_CXIMAGE build option enabled")
 	message (STATUS "")
 	target_compile_definitions(smelt PRIVATE
 		USE_CXIMAGE
 	)
+else ()
+	find_package(DevIL REQUIRED)
 endif ()
