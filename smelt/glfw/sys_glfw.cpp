@@ -138,6 +138,7 @@ bool SMELT_IMPL::smInit()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
 #endif
+	glfwWindowHint(GLFW_RESIZABLE,GLFW_FALSE);
 	if(!showwindow)
 		glfwWindowHint(GLFW_VISIBLE,GLFW_FALSE);
 	GLFWwindow *screen=glfwCreateWindow(windowed?scrw:dispw,windowed?scrh:disph,winTitle,NULL,NULL);
